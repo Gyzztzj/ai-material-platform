@@ -1,0 +1,75 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: ai-material-postgres
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-ai-material-db}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ai-material-db}',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ai-material-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: ai-material-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ai-material-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-material-server
+    ports:
+      - '3000:3000'
+    environment:
+      PORT: ${PORT:-3000}
+      DATABASE_URL: 'postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-ai-material-db}'
+      DATABASE_SSL: ${DATABASE_SSL:-false}
+      JWT_SECRET: ${JWT_SECRET:-mo-xiu-super-secret-jwt-key-change-this-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      TONGYI_API_KEY: ${TONGYI_API_KEY:-${QWEN_API_KEY}}
+      DOUBAI_API_KEY: ${DOUBAI_API_KEY}
+      REMOVE_BG_API_KEY: ${REMOVE_BG_API_KEY}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ai-material-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  ai-material-network:
+    driver: bridge
