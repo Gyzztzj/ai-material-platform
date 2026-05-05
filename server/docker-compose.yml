@@ -37,7 +37,8 @@ services:
     networks:
       - ai-material-network
 
-  app:
+  server:
+    image: ai-material-server
     build:
       context: .
       dockerfile: Dockerfile
@@ -68,7 +69,9 @@ services:
 
 volumes:
   postgres_data:
+    name: ai-material-postgres-data
   redis_data:
+    name: ai-material-redis-data
 
 networks:
   ai-material-network:
