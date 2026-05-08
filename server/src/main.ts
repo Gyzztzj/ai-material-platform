@@ -18,6 +18,9 @@ async function bootstrap() {
   app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
   const configService = app.get(ConfigService);
 
+  // 全局路由前缀
+  app.setGlobalPrefix('api');
+
   // 全局验证管道
   app.useGlobalPipes(
     new ValidationPipe({
@@ -48,7 +51,7 @@ async function bootstrap() {
   });
   app.use(limiter);
 
-  // 静态文件服务
+  // 静态文件服务（不使用 /api 前缀）
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   // Swagger API文档
@@ -58,7 +61,7 @@ async function bootstrap() {
     .setVersion('1.0')
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('api/docs', app, document);
 
   const port = configService.get('PORT') || 3000;
   await app.listen(port);
