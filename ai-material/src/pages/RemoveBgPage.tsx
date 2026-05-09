@@ -87,8 +87,9 @@ export default function RemoveBgPage() {
 
           if (task.status === "completed") {
             clearInterval(interval);
+            const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
             setResultUrl(
-              `${import.meta.env.VITE_API_URL}${task.result.processed}`,
+              `${baseUrl}${task.result.processed}`,
             );
             setIsProcessing(false);
             toast("抠图成功！", "success");

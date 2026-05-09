@@ -58,6 +58,8 @@ export default function GeneratePage() {
   const { isGenerating, progress, result, generateImage } = useAIGeneration();
   const [showEditor, setShowEditor] = useState(false);
   const [editImageUrl, setEditImageUrl] = useState<string | null>(null);
+  const [editingImageIndex, setEditingImageIndex] = useState<number>(0);
+  const [resultImages, setResultImages] = useState<string[]>([]);
   const [selectedStyle, setSelectedStyle] = useState("通用");
   const [isOptimizing, setIsOptimizing] = useState(false);
 
@@ -93,6 +95,13 @@ export default function GeneratePage() {
       }
     }
   }, [supportedSizes, size]);
+
+  // 监听 result 变化，更新 resultImages
+  useEffect(() => {
+    if (result?.images) {
+      setResultImages(result.images);
+    }
+  }, [result]);
 
   const handleModelChange = (newModelId: string) => {
     setSelectedModelId(newModelId);
@@ -135,6 +144,16 @@ export default function GeneratePage() {
   const getFullImageUrl = (imageUrl: string) => {
     const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
     return `${baseUrl}${imageUrl}`;
+  };
+
+  // 从编辑后的 URL 中提取路径部分
+  const extractImagePath = (editedUrl: string) => {
+    const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    if (editedUrl.startsWith(baseUrl)) {
+      return editedUrl.replace(baseUrl, "");
+    }
+    // 如果是 data URL，暂时不处理，这种情况应该不会发生
+    return editedUrl;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -310,9 +329,9 @@ export default function GeneratePage() {
                 </CardContent>
               </Card>
             </div>
-          ) : result ? (
+          ) : resultImages.length > 0 ? (
             <div className="grid grid-cols-1 gap-4">
-              {result.images.map((image, index) => (
+              {resultImages.map((image, index) => (
                 <Card key={index} className="overflow-hidden group">
                   <CardContent className="p-0 relative">
                     <img
@@ -334,6 +353,7 @@ export default function GeneratePage() {
                           setEditImageUrl(
                             `${import.meta.env.VITE_API_URL}${image}`,
                           );
+                          setEditingImageIndex(index);
                           setShowEditor(true);
                         }}
                       >
@@ -367,8 +387,11 @@ export default function GeneratePage() {
             <ImageEditor
               imageUrl={editImageUrl}
               onSave={(editedUrl) => {
-                // 刷新生成历史，显示新编辑的图片
-                loadGenerationHistory();
+                // 更新显示的图片
+                const newImagePath = extractImagePath(editedUrl);
+                const newResultImages = [...resultImages];
+                newResultImages[editingImageIndex] = newImagePath;
+                setResultImages(newResultImages);
                 setShowEditor(false);
                 toast("图片编辑完成！已保存到素材库", "success");
               }}

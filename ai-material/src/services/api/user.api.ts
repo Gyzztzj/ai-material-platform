@@ -12,8 +12,4 @@ export const userApi = {
   getProfile: async () => {
     return axiosInstance.get("/user/profile");
   },
-
-  updateProfile: async (data: any) => {
-    return axiosInstance.put("/user/profile", data);
-  },
 };
