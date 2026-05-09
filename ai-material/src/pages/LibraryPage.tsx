@@ -428,7 +428,7 @@ export default function LibraryPage() {
 
       {showEditDialog && selectedMaterial && (
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="w-[90vw] min  -w-[800px]">
+          <DialogContent className="w-[90vw] min-w-[800px]">
             <DialogHeader>
               <DialogTitle>图片编辑</DialogTitle>
             </DialogHeader>

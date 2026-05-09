@@ -1,0 +1,33 @@
+{
+  "name": "ai-material-platform",
+  "version": "1.0.0",
+  "description": "AI 素材平台 - 全栈项目",
+  "scripts": {
+    "dev:frontend": "cd ai-material && pnpm dev",
+    "dev:backend": "cd server && pnpm start:dev",
+    "build:frontend": "cd ai-material && pnpm build",
+    "build:backend": "cd server && pnpm build",
+    "build": "pnpm build:frontend && pnpm build:backend",
+    "lint:frontend": "cd ai-material && pnpm lint",
+    "lint:backend": "cd server && pnpm lint",
+    "lint": "pnpm lint:frontend && pnpm lint:backend",
+    "format:backend": "cd server && pnpm format",
+    "prepare": "husky install",
+    "commit": "git-cz"
+  },
+  "keywords": ["ai", "material", "fullstack"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "commitizen": "^4.3.1",
+    "cz-conventional-changelog": "^3.3.0",
+    "husky": "^9.1.7"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  }
+}

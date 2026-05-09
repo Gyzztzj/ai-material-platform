@@ -38,12 +38,13 @@ interface ImageEditorProps {
 }
 
 export default function ImageEditor({
-  imageUrl,
+  imageUrl: initialImageUrl,
   onSave,
   onCancel,
 }: ImageEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
+  const [currentImageUrl, setCurrentImageUrl] = useState(initialImageUrl);
   const [rotation, setRotation] = useState(0);
   const [scale, setScale] = useState(1);
   const [brightness, setBrightness] = useState(100);
@@ -93,8 +94,8 @@ export default function ImageEditor({
       setImage(img);
       drawImage(img);
     };
-    img.src = imageUrl;
-  }, [imageUrl]);
+    img.src = currentImageUrl;
+  }, [currentImageUrl]);
 
   // 绘制图片到Canvas
   const drawImage = (img: HTMLImageElement) => {
@@ -139,8 +140,20 @@ export default function ImageEditor({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const dataUrl = canvas.toDataURL("image/webp", 0.9);
-    onSave(dataUrl);
+    // 如果没有进行任何变换调整，直接使用当前的图片 URL
+    if (
+      rotation === 0 &&
+      scale === 1 &&
+      brightness === 100 &&
+      contrast === 100 &&
+      saturation === 100
+    ) {
+      onSave(currentImageUrl);
+    } else {
+      // 否则从 canvas 导出调整后的图片
+      const dataUrl = canvas.toDataURL("image/webp", 0.9);
+      onSave(dataUrl);
+    }
   };
 
   // 重置所有参数
@@ -153,7 +166,7 @@ export default function ImageEditor({
   };
 
   const handleAiEdit = async () => {
-    if (!imageUrl) return;
+    if (!currentImageUrl) return;
 
     if (!selectedModelId && models.length > 0) {
       setSelectedModelId(models[0].modelId);
@@ -161,15 +174,17 @@ export default function ImageEditor({
 
     setIsAiProcessing(true);
     try {
-      const response = await axiosInstance.post("/ai/image-edit", {
-        imageUrl: imageUrl.replace(import.meta.env.VITE_API_URL, ""),
-        task: editTask,
-        prompt: editPrompt,
-        modelId: selectedModelId || models[0]?.modelId,
-        scale: editTask === "outpainting" ? scale : undefined,
-      });
+      const { data: response } = await aiApi.editImage(
+        currentImageUrl.replace(import.meta.env.VITE_API_URL || "", ""),
+        editPrompt,
+        {
+          task: editTask,
+          modelId: selectedModelId || models[0]?.modelId,
+          scale: editTask === "outpainting" ? scale : undefined,
+        },
+      );
 
-      const taskId = response.data.taskId;
+      const taskId = response.taskId;
       if (!taskId) {
         throw new Error("任务ID未找到");
       }
@@ -182,21 +197,32 @@ export default function ImageEditor({
       // 轮询任务进度
       const interval = setInterval(async () => {
         try {
-          const taskResponse = await axiosInstance.get(`/ai/tasks/${taskId}`);
-          const task = taskResponse.data;
+          const { data: task } = await aiApi.getTask(taskId);
           failCount = 0;
 
           if (task.status === "completed") {
             clearInterval(interval);
             let newImageUrl = "";
+            const baseUrl =
+              import.meta.env.VITE_API_URL || "http://localhost:3000";
             if (Array.isArray(task.result.processed)) {
-              newImageUrl = `${import.meta.env.VITE_API_URL}${task.result.processed[0]}`;
+              newImageUrl = `${baseUrl}${task.result.processed[0]}`;
             } else {
-              newImageUrl = `${import.meta.env.VITE_API_URL}${task.result.processed}`;
+              newImageUrl = `${baseUrl}${task.result.processed}`;
             }
-            onSave(newImageUrl);
-            toast("AI编辑成功！", "success");
-            setIsAiProcessing(false);
+
+            // 加载新图片到 canvas 预览
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+              setImage(img);
+              drawImage(img);
+              // 更新当前 imageUrl 为新的图片地址，方便后续保存
+              setCurrentImageUrl(newImageUrl);
+              setIsAiProcessing(false);
+              toast("AI编辑成功！请预览后点击保存", "success");
+            };
+            img.src = newImageUrl;
           } else if (task.status === "failed") {
             clearInterval(interval);
             setIsAiProcessing(false);

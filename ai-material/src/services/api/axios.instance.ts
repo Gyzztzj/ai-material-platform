@@ -2,7 +2,7 @@ import axios from "axios";
 import { toast } from "../../components/ui/Toast";
 
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
+  baseURL: (import.meta.env.VITE_API_URL || "http://localhost:3000") + "/api",
 });
 
 const authEndpoints = ["/user/login", "/user/register"];
