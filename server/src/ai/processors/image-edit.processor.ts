@@ -132,7 +132,7 @@ export class ImageEditProcessor {
       await this.aiTaskRepository.update(taskId, { progress: 70 });
 
       // 从同步响应中直接提取图片 URL
-      let imageUrls: string[] = [];
+      const imageUrls: string[] = [];
       const anyResponse = response as any;
 
       // 尝试从同步响应格式中提取图片
@@ -234,7 +234,7 @@ export class ImageEditProcessor {
         result: {
           original: imageEditDto.imageUrl,
           processed: savedUrls,
-        } as any,
+        },
       });
     } catch (error) {
       this.logger.error('图片编辑失败:', error);
@@ -275,7 +275,7 @@ export class ImageEditProcessor {
         if (data?.output?.task_status === 'SUCCEEDED') {
           this.logger.log('任务成功！');
 
-          let imageUrls: string[] = [];
+          const imageUrls: string[] = [];
 
           // 尝试从不同格式解析
           if (data?.output?.choices && Array.isArray(data.output.choices)) {

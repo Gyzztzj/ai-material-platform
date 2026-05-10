@@ -35,7 +35,10 @@ async function bootstrap() {
   );
 
   // 全局拦截器
-  app.useGlobalInterceptors(new TransformInterceptor(), new LoggingInterceptor());
+  app.useGlobalInterceptors(
+    new TransformInterceptor(),
+    new LoggingInterceptor(),
+  );
 
   // 全局异常过滤器
   app.useGlobalFilters(new HttpExceptionFilter());
@@ -65,6 +68,8 @@ async function bootstrap() {
 
   const port = configService.get('PORT') || 3000;
   await app.listen(port);
-  app.get(WINSTON_MODULE_NEST_PROVIDER).log(`✅服务启动成功， running on: ${await app.getUrl()}`);
+  app
+    .get(WINSTON_MODULE_NEST_PROVIDER)
+    .log(`✅服务启动成功， running on: ${await app.getUrl()}`);
 }
 bootstrap();

@@ -14,7 +14,8 @@ export class SeedService implements OnModuleInit {
 
   private async seedAiModels() {
     try {
-      const createdModels = await this.aiModelService.batchCreate(DEFAULT_AI_MODELS);
+      const createdModels =
+        await this.aiModelService.batchCreate(DEFAULT_AI_MODELS);
       if (createdModels.length > 0) {
         this.logger.log(`成功初始化 ${createdModels.length} 个 AI 模型`);
       } else {

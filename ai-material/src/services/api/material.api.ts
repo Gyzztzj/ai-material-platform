@@ -28,24 +28,24 @@ export interface ApiResponse<T> {
 
 export const materialApi = {
   getAll: async () => {
-    return axiosInstance.get<ApiResponse<PaginatedResult<Material>>>("/material");
+    return axiosInstance.get<PaginatedResult<Material>>("/material");
   },
 
   getById: async (id: number) => {
-    return axiosInstance.get<ApiResponse<Material>>(`/material/${id}`);
+    return axiosInstance.get<Material>(`/material/${id}`);
   },
 
   upload: async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
-    return axiosInstance.post<ApiResponse<Material>>("/material/upload", formData);
+    return axiosInstance.post<Material>("/material/upload", formData);
   },
 
   update: async (id: number, data: Partial<{ name: string; category: string }>) => {
-    return axiosInstance.put<ApiResponse<Material>>(`/material/${id}`, data);
+    return axiosInstance.put<Material>(`/material/${id}`, data);
   },
 
   delete: async (id: number) => {
-    return axiosInstance.delete<ApiResponse<{ message: string }>>(`/material/${id}`);
+    return axiosInstance.delete<{ message: string }>(`/material/${id}`);
   },
 };

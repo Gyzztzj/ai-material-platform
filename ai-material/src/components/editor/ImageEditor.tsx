@@ -3,7 +3,7 @@ import { Button } from "../ui/button";
 import { Slider } from "../ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { toast } from "../ui/Toast";
-import axiosInstance from "@/services/api/axios.instance";
+
 import { aiApi } from "@/services/api/ai.api";
 import {
   Select,

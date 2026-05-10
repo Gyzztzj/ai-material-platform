@@ -62,7 +62,7 @@ export default function LibraryPage() {
       const { data } = await materialApi.getAll();
       console.log("API完整返回:", data);
       console.log("data.data:", data.data);
-      const materialsData = (data.data || []) as Material[];
+      const materialsData = data.data || [];
       console.log("解析后的素材列表:", materialsData);
       setMaterials(materialsData);
     } catch (error) {
@@ -434,7 +434,7 @@ export default function LibraryPage() {
             </DialogHeader>
             <ImageEditor
               imageUrl={`${import.meta.env.VITE_API_URL}${selectedMaterial.url}`}
-              onSave={(editedUrl) => {
+              onSave={(_editedUrl) => {
                 // 刷新素材列表，显示新编辑的图片
                 loadMaterials();
                 setShowEditDialog(false);

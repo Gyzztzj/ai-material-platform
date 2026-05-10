@@ -17,7 +17,11 @@ export class RemoveBgService {
     private aiQueue: Queue,
   ) {}
 
-  async createRemoveBgTask(userId: number, removeBgDto: RemoveBgDto, isBatch: boolean = false) {
+  async createRemoveBgTask(
+    userId: number,
+    removeBgDto: RemoveBgDto,
+    isBatch: boolean = false,
+  ) {
     const user = await this.userService.findOne(userId);
     const priority = this.calculatePriority(user?.role, isBatch);
 
@@ -50,7 +54,10 @@ export class RemoveBgService {
     return { taskId: task.id };
   }
 
-  private calculatePriority(userRole: string | undefined, isBatch: boolean): number {
+  private calculatePriority(
+    userRole: string | undefined,
+    isBatch: boolean,
+  ): number {
     if (isBatch) {
       return 3;
     }

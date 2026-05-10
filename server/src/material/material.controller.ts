@@ -59,7 +59,11 @@ export class MaterialController {
   }
 
   @Get()
-  findAll(@CurrentUser() user, @Query('category') category?: string, @Query() paginationDto?: PaginationDto) {
+  findAll(
+    @CurrentUser() user,
+    @Query('category') category?: string,
+    @Query() paginationDto?: PaginationDto,
+  ) {
     return this.materialService.findAll(user.id, category, paginationDto);
   }
 
