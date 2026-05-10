@@ -1,16 +1,21 @@
 import { useEffect, useRef } from "react";
 
-export interface TaskPollingOptions {
+interface Task {
+  status: string;
+  error?: string;
+}
+
+export interface TaskPollingOptions<T = unknown> {
   taskId: string;
-  onUpdate?: (task: any) => void;
-  onCompleted?: (task: any) => void;
-  onFailed?: (error: string, task: any) => void;
-  fetchTask: (taskId: string) => Promise<any>;
+  onUpdate?: (task: T) => void;
+  onCompleted?: (task: T) => void;
+  onFailed?: (error: string, task: T) => void;
+  fetchTask: (taskId: string) => Promise<{ data: T }>;
   interval?: number;
   enabled?: boolean;
 }
 
-export function useTaskPolling({
+export function useTaskPolling<T = unknown>({
   taskId,
   onUpdate,
   onCompleted,
@@ -18,7 +23,7 @@ export function useTaskPolling({
   fetchTask,
   interval = 1000,
   enabled = true,
-}: TaskPollingOptions) {
+}: TaskPollingOptions<T>) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -29,12 +34,12 @@ export function useTaskPolling({
         const { data: task } = await fetchTask(taskId);
         onUpdate?.(task);
 
-        if (task.status === "completed") {
+        if ((task as unknown as Task).status === "completed") {
           stopPolling();
           onCompleted?.(task);
-        } else if (task.status === "failed") {
+        } else if ((task as unknown as Task).status === "failed") {
           stopPolling();
-          onFailed?.(task.error || "任务失败", task);
+          onFailed?.((task as unknown as Task).error || "任务失败", task);
         }
       } catch (error) {
         console.error("轮询任务失败:", error);

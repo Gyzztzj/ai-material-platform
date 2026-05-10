@@ -6,7 +6,10 @@ import type { Cache } from 'cache-manager';
 @Injectable()
 export class CacheService {
   // 简单的内存缓存作为后备方案
-  private memoryCache = new Map<string, { value: any; expiresAt: number }>();
+  private memoryCache = new Map<
+    string,
+    { value: unknown; expiresAt: number }
+  >();
 
   constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
 
@@ -17,14 +20,14 @@ export class CacheService {
       if (result !== undefined) {
         return result;
       }
-    } catch (e) {
+    } catch {
       // 如果 cache-manager 失败，使用内存缓存
     }
 
     // 回退到内存缓存
     const cached = this.memoryCache.get(key);
     if (cached && cached.expiresAt > Date.now()) {
-      return cached.value;
+      return cached.value as T;
     }
     this.memoryCache.delete(key);
     return undefined;
@@ -34,7 +37,7 @@ export class CacheService {
     try {
       // 尝试使用 cache-manager
       await this.cacheManager.set(key, value, ttl ?? 3600);
-    } catch (e) {
+    } catch {
       // 回退到内存缓存
     }
     // 同时存入内存缓存
@@ -47,7 +50,7 @@ export class CacheService {
   async del(key: string): Promise<void> {
     try {
       await this.cacheManager.del(key);
-    } catch (e) {
+    } catch {
       // 忽略错误
     }
     this.memoryCache.delete(key);

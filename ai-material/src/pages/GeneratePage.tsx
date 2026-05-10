@@ -135,7 +135,8 @@ export default function GeneratePage() {
       const { data } = await aiApi.optimizePrompt(prompt, selectedStyle);
       setPrompt(data.optimizedPrompt);
       toast("提示词优化成功！", "success");
-    } catch {
+    } catch (error) {
+      console.error("提示词优化失败:", error);
     } finally {
       setIsOptimizing(false);
     }

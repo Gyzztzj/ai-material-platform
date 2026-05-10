@@ -123,9 +123,15 @@ export class AiController {
       // 如果没有指定taskType或无效，返回所有模型分组
       const allModels = await this.aiModelService.findEnabled();
       return {
-        generate: allModels.filter(m => m.taskTypes.includes(TaskType.GENERATE)),
-        removeBg: allModels.filter(m => m.taskTypes.includes(TaskType.REMOVE_BG)),
-        imageEdit: allModels.filter(m => m.taskTypes.includes(TaskType.IMAGE_EDIT)),
+        generate: allModels.filter((m) =>
+          m.taskTypes.includes(TaskType.GENERATE),
+        ),
+        removeBg: allModels.filter((m) =>
+          m.taskTypes.includes(TaskType.REMOVE_BG),
+        ),
+        imageEdit: allModels.filter((m) =>
+          m.taskTypes.includes(TaskType.IMAGE_EDIT),
+        ),
       };
     }
   }

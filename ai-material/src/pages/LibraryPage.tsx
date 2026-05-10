@@ -62,7 +62,7 @@ export default function LibraryPage() {
       const { data } = await materialApi.getAll();
       console.log("API完整返回:", data);
       console.log("data.data:", data.data);
-      const materialsData = (data.data || []) as Material[];
+      const materialsData = data.data || [];
       console.log("解析后的素材列表:", materialsData);
       setMaterials(materialsData);
     } catch (error) {
@@ -109,7 +109,8 @@ export default function LibraryPage() {
       toast("重命名成功", "success");
       setShowRenameDialog(false);
       loadMaterials();
-    } catch {
+    } catch (error) {
+      console.error("重命名失败:", error);
     } finally {
       setRenaming(false);
     }
@@ -123,7 +124,8 @@ export default function LibraryPage() {
       await materialApi.delete(id);
       toast("删除成功", "success");
       loadMaterials();
-    } catch {
+    } catch (error) {
+      console.error("删除失败:", error);
     } finally {
       setDeletingId(null);
     }
@@ -434,7 +436,7 @@ export default function LibraryPage() {
             </DialogHeader>
             <ImageEditor
               imageUrl={`${import.meta.env.VITE_API_URL}${selectedMaterial.url}`}
-              onSave={(editedUrl) => {
+              onSave={() => {
                 // 刷新素材列表，显示新编辑的图片
                 loadMaterials();
                 setShowEditDialog(false);

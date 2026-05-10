@@ -1,6 +1,10 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { Logger } from '@nestjs/common';
-import { NetworkException, ApiException, ValidationException } from '../exceptions';
+import {
+  NetworkException,
+  ApiException,
+  ValidationException,
+} from '../exceptions';
 
 const logger = new Logger('AIUtils');
 
@@ -87,32 +91,32 @@ export class AIUtils {
       if (error.response) {
         const data = error.response.data as Record<string, unknown>;
         const status = error.response.status;
-        
+
         if (status === 400) {
           return new ValidationException(
             (data?.message as string) || '请求参数错误，请检查输入',
             data,
           );
         }
-        
-        const message = (data?.message as string) || 
+
+        const message =
+          (data?.message as string) ||
           `AI服务请求失败: ${error.response.statusText}`;
         return new ApiException(message, status, data);
       } else if (error.request) {
         const errorMsg = error instanceof Error ? error.message : '网络错误';
-        return new NetworkException(
-          '无法连接到AI服务，请稍后重试',
-          { cause: errorMsg },
-        );
+        return new NetworkException('无法连接到AI服务，请稍后重试', {
+          cause: errorMsg,
+        });
       } else {
-        const errorMsg = error instanceof Error ? error.message : '请求配置错误';
-        return new ValidationException(
-          `请求配置错误: ${errorMsg}`,
-          { cause: errorMsg },
-        );
+        const errorMsg =
+          error instanceof Error ? error.message : '请求配置错误';
+        return new ValidationException(`请求配置错误: ${errorMsg}`, {
+          cause: errorMsg,
+        });
       }
     }
-    
+
     const errMsg = error instanceof Error ? error.message : String(error);
     return new ApiException(errMsg || '未知错误');
   }
@@ -159,9 +163,11 @@ export class AIUtils {
 
         await AIUtils.sleep(retryIntervalMs);
       } catch (error) {
-        if (error instanceof ApiException || 
-            error instanceof NetworkException || 
-            error instanceof ValidationException) {
+        if (
+          error instanceof ApiException ||
+          error instanceof NetworkException ||
+          error instanceof ValidationException
+        ) {
           throw error;
         }
         if (axios.isAxiosError(error) && error.response?.status === 404) {
@@ -209,14 +215,15 @@ export class AIUtils {
       }
     }
 
-    if (lastError && (
-      lastError instanceof ApiException || 
-      lastError instanceof NetworkException || 
-      lastError instanceof ValidationException
-    )) {
+    if (
+      lastError &&
+      (lastError instanceof ApiException ||
+        lastError instanceof NetworkException ||
+        lastError instanceof ValidationException)
+    ) {
       throw lastError;
     }
-    
+
     throw new ApiException(lastError?.message || '请求重试失败');
   }
 }

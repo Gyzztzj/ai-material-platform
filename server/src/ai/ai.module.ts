@@ -34,7 +34,7 @@ import { SeedService } from '../database/seed.service';
         removeOnFail: false,
       },
       limiter: {
-        max: 20,  // 增加到每秒 20 个任务
+        max: 20, // 增加到每秒 20 个任务
         duration: 1000,
       },
     }),

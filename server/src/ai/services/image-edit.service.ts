@@ -50,7 +50,10 @@ export class ImageEditService {
     return { taskId: task.id };
   }
 
-  private calculatePriority(userRole: string | undefined, isBatch: boolean): number {
+  private calculatePriority(
+    userRole: string | undefined,
+    isBatch: boolean,
+  ): number {
     if (isBatch) {
       return 3;
     }

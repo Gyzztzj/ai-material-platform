@@ -25,7 +25,9 @@ export class TaskCleanupService {
         status: 'failed',
         createdAt: LessThan(sevenDaysAgo),
       });
-      this.logger.log(`已删除 ${failedTasksResult.affected} 个 7 天前的失败任务`);
+      this.logger.log(
+        `已删除 ${failedTasksResult.affected} 个 7 天前的失败任务`,
+      );
 
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -34,7 +36,9 @@ export class TaskCleanupService {
         status: 'completed',
         createdAt: LessThan(thirtyDaysAgo),
       });
-      this.logger.log(`已删除 ${completedTasksResult.affected} 个 30 天前的已完成任务`);
+      this.logger.log(
+        `已删除 ${completedTasksResult.affected} 个 30 天前的已完成任务`,
+      );
 
       this.logger.log('任务清理完成');
     } catch (error) {

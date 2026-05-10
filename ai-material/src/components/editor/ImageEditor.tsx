@@ -3,7 +3,7 @@ import { Button } from "../ui/button";
 import { Slider } from "../ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { toast } from "../ui/Toast";
-import axiosInstance from "@/services/api/axios.instance";
+
 import { aiApi } from "@/services/api/ai.api";
 import {
   Select,
@@ -58,47 +58,29 @@ export default function ImageEditor({
   );
   const [models, setModels] = useState<AIModel[]>([]);
 
-  // 获取图片编辑模型
-  useEffect(() => {
-    const loadModels = async () => {
-      try {
-        const { data } = await aiApi.getModels("image-edit");
-        setModels(data.imageEdit || []);
-      } catch (err) {
-        console.error("加载模型列表失败:", err);
-      }
-    };
-    loadModels();
-  }, []);
+  // 保存编辑后的图片
+  const handleSave = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    // Ctrl+S 保存编辑
-    if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-      e.preventDefault();
-      handleSave();
+    // 如果没有进行任何变换调整，直接使用当前的图片 URL
+    if (
+      rotation === 0 &&
+      scale === 1 &&
+      brightness === 100 &&
+      contrast === 100 &&
+      saturation === 100
+    ) {
+      onSave(currentImageUrl);
+    } else {
+      // 否则从 canvas 导出调整后的图片
+      const dataUrl = canvas.toDataURL("image/webp", 0.9);
+      onSave(dataUrl);
     }
-  }, []);
-
-  useEffect(() => {
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [handleKeyDown]);
-
-  // 加载图片
-  useEffect(() => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      setImage(img);
-      drawImage(img);
-    };
-    img.src = currentImageUrl;
-  }, [currentImageUrl]);
+  }, [onSave, currentImageUrl, rotation, scale, brightness, contrast, saturation]);
 
   // 绘制图片到Canvas
-  const drawImage = (img: HTMLImageElement) => {
+  const drawImage = useCallback((img: HTMLImageElement) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -126,35 +108,53 @@ export default function ImageEditor({
     ctx.rotate(radians);
     ctx.scale(scale, scale);
     ctx.drawImage(img, -img.width / 2, -img.height / 2);
-  };
+  }, [rotation, scale, brightness, contrast, saturation]);
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    // Ctrl+S 保存编辑
+    if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+      e.preventDefault();
+      handleSave();
+    }
+  }, [handleSave]);
+
+  // 获取图片编辑模型
+  useEffect(() => {
+    const loadModels = async () => {
+      try {
+        const { data } = await aiApi.getModels("image-edit");
+        setModels(data.imageEdit || []);
+      } catch (err) {
+        console.error("加载模型列表失败:", err);
+      }
+    };
+    loadModels();
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleKeyDown]);
+
+  // 加载图片
+  useEffect(() => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      setImage(img);
+      drawImage(img);
+    };
+    img.src = currentImageUrl;
+  }, [currentImageUrl, drawImage]);
 
   // 当参数变化时重绘
   useEffect(() => {
     if (image) {
       drawImage(image);
     }
-  }, [rotation, scale, brightness, contrast, saturation]);
-
-  // 保存编辑后的图片
-  const handleSave = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    // 如果没有进行任何变换调整，直接使用当前的图片 URL
-    if (
-      rotation === 0 &&
-      scale === 1 &&
-      brightness === 100 &&
-      contrast === 100 &&
-      saturation === 100
-    ) {
-      onSave(currentImageUrl);
-    } else {
-      // 否则从 canvas 导出调整后的图片
-      const dataUrl = canvas.toDataURL("image/webp", 0.9);
-      onSave(dataUrl);
-    }
-  };
+  }, [rotation, scale, brightness, contrast, saturation, image, drawImage]);
 
   // 重置所有参数
   const handleReset = () => {

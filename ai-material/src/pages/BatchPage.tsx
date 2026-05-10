@@ -86,15 +86,15 @@ export default function BatchPage() {
           }
         }
       }, 2000); // 增加轮询间隔到 2 秒
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? (error as unknown as { response?: { data?: { message?: string } } })
+              .response?.data?.message || error.message
+          : "批量抠图失败，请重试";
       console.error("批量抠图出错:", error);
       setIsProcessing(false);
-      toast(
-        error?.response?.data?.message ||
-          error?.message ||
-          "批量抠图失败，请重试",
-        "error",
-      );
+      toast(errorMessage, "error");
     }
   };
 
@@ -153,15 +153,15 @@ export default function BatchPage() {
           }
         }
       }, 2000); // 增加轮询间隔到 2 秒
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? (error as unknown as { response?: { data?: { message?: string } } })
+              .response?.data?.message || error.message
+          : "批量生成失败，请重试";
       console.error("批量生成出错:", error);
       setIsProcessing(false);
-      toast(
-        error?.response?.data?.message ||
-          error?.message ||
-          "批量生成失败，请重试",
-        "error",
-      );
+      toast(errorMessage, "error");
     }
   };
 

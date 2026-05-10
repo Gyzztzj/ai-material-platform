@@ -5,10 +5,14 @@ import { useUserStore } from "../store/user.store";
 import { useTaskStore } from "../store/task.store";
 import { toast } from "../components/ui/Toast";
 
+interface GenerateResult {
+  images: string[];
+}
+
 export function useAIGeneration() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [result, setResult] = useState<{ images: string[] } | null>(null);
+  const [result, setResult] = useState<GenerateResult | null>(null);
   const setUser = useUserStore((state) => state.setUser);
   const { addTask, updateTask, setActiveTaskId, getActiveTask, removeTask } = useTaskStore();
   const intervalRef = useRef<number | null>(null);
@@ -20,22 +24,6 @@ export function useAIGeneration() {
       intervalRef.current = null;
     }
   }, []);
-
-  // 检查是否有进行中的任务需要恢复
-  useEffect(() => {
-    const activeTask = getActiveTask();
-    if (activeTask && (activeTask.status === "pending" || activeTask.status === "processing")) {
-      // 恢复轮询
-      setIsGenerating(true);
-      setProgress(activeTask.progress);
-      startPolling(activeTask.id);
-    }
-  }, [getActiveTask]);
-
-  // 组件卸载时清理
-  useEffect(() => {
-    return cleanup;
-  }, [cleanup]);
 
   const startPolling = useCallback((taskId: string) => {
     cleanup();
@@ -90,6 +78,22 @@ export function useAIGeneration() {
     intervalRef.current = window.setInterval(poll, 1500);
   }, [cleanup, updateTask, setActiveTaskId, setUser]);
 
+  // 检查是否有进行中的任务需要恢复
+  useEffect(() => {
+    const activeTask = getActiveTask();
+    if (activeTask && (activeTask.status === "pending" || activeTask.status === "processing")) {
+      // 恢复轮询
+      setIsGenerating(true);
+      setProgress(activeTask.progress);
+      startPolling(activeTask.id);
+    }
+  }, [getActiveTask, startPolling]);
+
+  // 组件卸载时清理
+  useEffect(() => {
+    return cleanup;
+  }, [cleanup]);
+
   const generateImage = async (prompt: string, size: string = "1024x1024", modelId?: string) => {
     // 清理之前的轮询
     cleanup();
@@ -117,9 +121,10 @@ export function useAIGeneration() {
 
       toast("生成任务已创建，请稍候...", "info");
       startPolling(taskId);
-    } catch (err: any) {
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "生成失败";
       setIsGenerating(false);
-      toast(err.message || "生成失败", "error");
+      toast(errorMessage, "error");
     }
   };
 

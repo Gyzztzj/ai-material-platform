@@ -2,8 +2,6 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "../ui/button";
 import { useUserStore } from "../../store/user.store";
-import { useTheme } from "next-themes";
-import { Sun, Moon } from "lucide-react";
 
 // 定义 NavLink 的 active 类名
 const navLinkActiveClass = "text-blue-600 font-semibold";
@@ -13,7 +11,6 @@ const navLinkDefaultClass =
 export function Navbar() {
   const { user, logout } = useUserStore();
   const navigate = useNavigate();
-  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     const savedUser = localStorage.getItem("user");

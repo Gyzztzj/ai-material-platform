@@ -13,17 +13,17 @@ export class ModelSchedulerService {
     }
 
     return models.sort(
-      (a, b) => b.quality - a.quality || a.cost - b.cost || a.sortOrder - b.sortOrder,
+      (a, b) =>
+        b.quality - a.quality || a.cost - b.cost || a.sortOrder - b.sortOrder,
     )[0];
   }
 
-  async selectModelById(modelId: string, taskType: TaskType): Promise<AiModel | null> {
+  async selectModelById(
+    modelId: string,
+    taskType: TaskType,
+  ): Promise<AiModel | null> {
     const model = await this.aiModelService.findByModelId(modelId);
-    if (
-      model &&
-      model.enabled &&
-      model.taskTypes.includes(taskType)
-    ) {
+    if (model && model.enabled && model.taskTypes.includes(taskType)) {
       return model;
     }
     return null;

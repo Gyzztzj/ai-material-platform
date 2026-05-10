@@ -2,14 +2,26 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import axios from 'axios';
 import { AiTask } from '../entities/ai-task.entity';
 import { BatchGenerateDto, BatchRemoveBgDto } from '../dto/batch-task.dto';
 import { OptimizePromptDto } from '../dto/optimize-prompt.dto';
 import { AIUtils } from '../../common/utils/ai.utils';
 import { GenerateService } from './generate.service';
 import { RemoveBgService } from './remove-bg.service';
-import { PaginationDto, PaginatedResult } from '../../common/dto/pagination.dto';
+import {
+  PaginationDto,
+  PaginatedResult,
+} from '../../common/dto/pagination.dto';
+
+interface QwenResponse {
+  output: {
+    choices: Array<{
+      message: {
+        content: string;
+      };
+    }>;
+  };
+}
 
 @Injectable()
 export class TaskService {
@@ -25,12 +37,25 @@ export class TaskService {
     return this.aiTaskRepository.findOneBy({ id: taskId });
   }
 
-  async getUserTasks(userId: number, paginationDto?: PaginationDto): Promise<PaginatedResult<AiTask>> {
+  async getUserTasks(
+    userId: number,
+    paginationDto?: PaginationDto,
+  ): Promise<PaginatedResult<AiTask>> {
     const { page = 1, limit = 20 } = paginationDto || {};
     const skip = (page - 1) * limit;
 
     const [data, total] = await this.aiTaskRepository.findAndCount({
-      select: ['id', 'type', 'params', 'status', 'progress', 'result', 'error', 'createdAt', 'updatedAt'],
+      select: [
+        'id',
+        'type',
+        'params',
+        'status',
+        'progress',
+        'result',
+        'error',
+        'createdAt',
+        'updatedAt',
+      ],
       where: { userId },
       order: { createdAt: 'DESC' },
       skip,
@@ -125,10 +150,9 @@ export class TaskService {
       30000,
     );
 
+    const qwenResponse = response as QwenResponse;
     return {
-      optimizedPrompt: (
-        response as any
-      ).output.choices[0].message.content.trim(),
+      optimizedPrompt: qwenResponse.output.choices[0].message.content.trim(),
     };
   }
 }

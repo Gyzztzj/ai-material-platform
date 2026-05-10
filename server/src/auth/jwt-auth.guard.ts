@@ -42,7 +42,7 @@ export class JwtAuthGuard implements CanActivate {
       this.logger.log(`Token验证成功，用户ID: ${payload.sub}`);
 
       const user = await this.userService.findOne(payload.sub);
-      
+
       if (!user) {
         this.logger.warn('用户不存在');
         throw new UnauthorizedException('用户不存在');
