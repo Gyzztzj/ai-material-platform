@@ -17,7 +17,7 @@ import { ModelSchedulerService } from '../model-scheduler.service';
 import { AiModelService } from '../services/ai-model.service';
 import { AIUtils } from '../../common/utils/ai.utils';
 import { FileUtils } from '../../common/utils/file.utils';
-import { TaskType, CallMode } from '../entities/ai-model.entity';
+import { TaskType } from '../entities/ai-model.entity';
 import { Material } from 'src/material/entities/material.entity';
 import { MaterialService } from 'src/material/material.service';
 
@@ -283,7 +283,9 @@ export class GenerateProcessor {
         if (model) {
           await this.aiModelService.recordFailure(model.modelId);
         }
-      } catch (e) {}
+      } catch {
+        // 忽略错误
+      }
 
       try {
         const nextModel = await this.modelSchedulerService.selectBestModel(
@@ -294,7 +296,7 @@ export class GenerateProcessor {
           await this.handleGenerate(job);
           return;
         }
-      } catch (e) {
+      } catch {
         this.logger.error('所有模型都不可用，返还积分');
         await this.userService.addCredits(userId, 1);
         await this.aiTaskRepository.update(taskId, {

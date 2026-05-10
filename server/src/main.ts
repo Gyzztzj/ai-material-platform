@@ -72,4 +72,4 @@ async function bootstrap() {
     .get(WINSTON_MODULE_NEST_PROVIDER)
     .log(`✅服务启动成功， running on: ${await app.getUrl()}`);
 }
-bootstrap();
+void bootstrap();

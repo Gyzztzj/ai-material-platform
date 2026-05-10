@@ -33,13 +33,18 @@ export default function LoginPage() {
 
     try {
       const { data } = await userApi.login(email, password);
-      console.log('登录响应数据:', data);
+      console.log("登录响应数据:", data);
       localStorage.setItem("token", data.access_token);
       setUser(data.user);
       navigate("/");
-    } catch (err: any) {
-      console.error('登录失败:', err);
-      setError(err.response?.data?.message || "登录失败");
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error
+          ? (err as unknown as { response?: { data?: { message?: string } } })
+              .response?.data?.message || err.message
+          : "登录失败";
+      console.error("登录失败:", err);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -52,12 +57,17 @@ export default function LoginPage() {
 
     try {
       const { data } = await userApi.register(email, password);
-      console.log('注册响应数据:', data);
+      console.log("注册响应数据:", data);
       localStorage.setItem("token", data.access_token);
       setUser(data.user);
       navigate("/");
-    } catch (err: any) {
-      setError(err.response?.data?.message || "注册失败");
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error
+          ? (err as unknown as { response?: { data?: { message?: string } } })
+              .response?.data?.message || err.message
+          : "注册失败";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -71,12 +81,17 @@ export default function LoginPage() {
 
     try {
       const { data } = await userApi.login("demo@demo.com", "demo123456");
-      console.log('一键体验响应数据:', data);
+      console.log("一键体验响应数据:", data);
       localStorage.setItem("token", data.access_token);
       setUser(data.user);
       navigate("/");
-    } catch (err: any) {
-      setError(err.response?.data?.message || "登录失败");
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error
+          ? (err as unknown as { response?: { data?: { message?: string } } })
+              .response?.data?.message || err.message
+          : "登录失败";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -103,7 +118,9 @@ export default function LoginPage() {
               <div className="w-full border-t border-gray-200" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">或使用账号登录</span>
+              <span className="px-2 bg-white text-gray-500">
+                或使用账号登录
+              </span>
             </div>
           </div>
 

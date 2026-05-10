@@ -6,7 +6,7 @@ interface Task {
   type: string;
   status: string;
   progress: number;
-  result: any;
+  result: unknown;
   error: string | null;
   createdAt: string;
   prompt?: string;

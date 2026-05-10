@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import axios from 'axios';
 import { AiTask } from '../entities/ai-task.entity';
 import { BatchGenerateDto, BatchRemoveBgDto } from '../dto/batch-task.dto';
 import { OptimizePromptDto } from '../dto/optimize-prompt.dto';
@@ -13,6 +12,16 @@ import {
   PaginationDto,
   PaginatedResult,
 } from '../../common/dto/pagination.dto';
+
+interface QwenResponse {
+  output: {
+    choices: Array<{
+      message: {
+        content: string;
+      };
+    }>;
+  };
+}
 
 @Injectable()
 export class TaskService {
@@ -141,10 +150,9 @@ export class TaskService {
       30000,
     );
 
+    const qwenResponse = response as QwenResponse;
     return {
-      optimizedPrompt: (
-        response as any
-      ).output.choices[0].message.content.trim(),
+      optimizedPrompt: qwenResponse.output.choices[0].message.content.trim(),
     };
   }
 }

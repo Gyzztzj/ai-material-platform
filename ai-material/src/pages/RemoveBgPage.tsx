@@ -26,40 +26,7 @@ export default function RemoveBgPage() {
   const [editImageUrl, setEditImageUrl] = useState<string | null>(null);
   const setUser = useUserStore((state) => state.setUser);
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-        if (!isProcessing && selectedFile) {
-          e.preventDefault();
-          handleRemoveBg();
-        }
-      }
-    },
-    [isProcessing, selectedFile],
-  );
-
-  useEffect(() => {
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [handleKeyDown]);
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setSelectedFile(file);
-    setResultUrl(null);
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreviewUrl(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleRemoveBg = async () => {
+  const handleRemoveBg = useCallback(async () => {
     if (!selectedFile) return;
 
     setIsProcessing(true);
@@ -111,14 +78,49 @@ export default function RemoveBgPage() {
           }
         }
       }, 2000);
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? (error as unknown as { response?: { data?: { message?: string } } })
+              .response?.data?.message || error.message
+          : "抠图失败，请重试";
       console.error("抠图出错:", error);
       setIsProcessing(false);
-      toast(
-        error?.response?.data?.message || error?.message || "抠图失败，请重试",
-        "error",
-      );
+      toast(errorMessage, "error");
     }
+  }, [selectedFile, setUser]);
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        if (!isProcessing && selectedFile) {
+          e.preventDefault();
+          handleRemoveBg();
+        }
+      }
+    },
+    [isProcessing, selectedFile, handleRemoveBg],
+  );
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleKeyDown]);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setSelectedFile(file);
+    setResultUrl(null);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setPreviewUrl(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const downloadResult = async () => {

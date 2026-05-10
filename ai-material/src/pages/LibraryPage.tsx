@@ -109,7 +109,8 @@ export default function LibraryPage() {
       toast("重命名成功", "success");
       setShowRenameDialog(false);
       loadMaterials();
-    } catch {
+    } catch (error) {
+      console.error("重命名失败:", error);
     } finally {
       setRenaming(false);
     }
@@ -123,7 +124,8 @@ export default function LibraryPage() {
       await materialApi.delete(id);
       toast("删除成功", "success");
       loadMaterials();
-    } catch {
+    } catch (error) {
+      console.error("删除失败:", error);
     } finally {
       setDeletingId(null);
     }
@@ -434,7 +436,7 @@ export default function LibraryPage() {
             </DialogHeader>
             <ImageEditor
               imageUrl={`${import.meta.env.VITE_API_URL}${selectedMaterial.url}`}
-              onSave={(_editedUrl) => {
+              onSave={() => {
                 // 刷新素材列表，显示新编辑的图片
                 loadMaterials();
                 setShowEditDialog(false);

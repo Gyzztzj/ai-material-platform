@@ -1,4 +1,4 @@
-import { IsArray, IsNotEmpty, IsString, ValidateNested } from 'class-validator';
+import { IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { GenerateImageDto } from './generate-image.dto';
 import { RemoveBgDto } from './remove-bg.dto';

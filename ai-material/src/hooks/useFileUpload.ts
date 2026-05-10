@@ -1,24 +1,24 @@
 import { useState, useRef } from "react";
 
-export interface FileUploadOptions {
+export interface FileUploadOptions<T = unknown> {
   onUploadStart?: () => void;
   onUploadProgress?: (progress: number) => void;
-  onUploadComplete?: (result: any) => void;
+  onUploadComplete?: (result: T[]) => void;
   onUploadError?: (error: string) => void;
-  uploadFile: (file: File) => Promise<any>;
+  uploadFile: (file: File) => Promise<T>;
   multiple?: boolean;
   maxFiles?: number;
   accept?: string;
 }
 
-export function useFileUpload({
+export function useFileUpload<T = unknown>({
   onUploadStart,
   onUploadProgress,
   onUploadComplete,
   onUploadError,
   uploadFile,
   maxFiles = 20,
-}: FileUploadOptions) {
+}: FileUploadOptions<T>) {
   const [files, setFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -50,7 +50,7 @@ export function useFileUpload({
     onUploadStart?.();
 
     try {
-      const results: any[] = [];
+      const results: T[] = [];
       for (let i = 0; i < files.length; i++) {
         const result = await uploadFile(files[i]);
         results.push(result);
@@ -61,8 +61,9 @@ export function useFileUpload({
 
       onUploadComplete?.(results);
       setFiles([]);
-    } catch (error: any) {
-      onUploadError?.(error.message || "上传失败");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "上传失败";
+      onUploadError?.(errorMessage);
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
