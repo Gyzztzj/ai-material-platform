@@ -26,7 +26,7 @@ export default (): EnvironmentVariables => ({
   LOG_DIR: process.env.LOG_DIR || 'logs',
   POSTGRES_USER: process.env.POSTGRES_USER || 'postgres',
   POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD || 'postgres',
-  POSTGRES_DB: process.env.POSTGRES_DB || 'ai-material-db',
+  POSTGRES_DB: process.env.POSTGRES_DB || 'web-db',
   POSTGRES_HOST: process.env.POSTGRES_HOST || 'localhost',
   POSTGRES_PORT: parseInt(process.env.POSTGRES_PORT || '5432', 10) || 5432,
   DATABASE_URL: process.env.DATABASE_URL || '',

@@ -20,7 +20,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - ai-material-network
+      - web-network
 
   redis:
     image: redis:7-alpine
@@ -35,7 +35,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - ai-material-network
+      - web-network
 
   server:
     image: ai-material-server
@@ -64,13 +64,13 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - ai-material-network
+      - web-network
     restart: unless-stopped
 
   frontend:
     image: ai-material-frontend
     build:
-      context: ./ai-material
+      context: ./web
       dockerfile: Dockerfile
       args:
         - VITE_API_URL=${VITE_API_URL:-http://localhost:3000}
@@ -80,7 +80,7 @@ services:
     depends_on:
       - server
     networks:
-      - ai-material-network
+      - web-network
     restart: unless-stopped
 
 volumes:
@@ -90,5 +90,5 @@ volumes:
     name: ai-material-redis-data
 
 networks:
-  ai-material-network:
+  web-network:
     driver: bridge

@@ -18,6 +18,10 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { MaterialService } from './material.service';
 import { UpdateMaterialDto } from './dto/update-material.dto';
+import {
+  PreprocessMaterialDto,
+  BatchPreprocessDto,
+} from './dto/preprocess.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Controller('material')
@@ -84,5 +88,26 @@ export class MaterialController {
   @Delete(':id')
   remove(@Param('id') id: string, @CurrentUser() user) {
     return this.materialService.remove(+id, user.id);
+  }
+
+  @Post(':id/preprocess')
+  preprocess(
+    @Param('id') id: string,
+    @CurrentUser() user,
+    @Body() preprocessDto: PreprocessMaterialDto,
+  ) {
+    return this.materialService.preprocessMaterial(+id, user.id, preprocessDto);
+  }
+
+  @Post('batch-preprocess')
+  batchPreprocess(
+    @CurrentUser() user,
+    @Body() batchPreprocessDto: BatchPreprocessDto,
+  ) {
+    return this.materialService.batchPreprocess(
+      user.id,
+      batchPreprocessDto.materialIds,
+      batchPreprocessDto.preprocess,
+    );
   }
 }
