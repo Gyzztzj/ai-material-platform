@@ -1,8 +1,13 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import sharp from 'sharp';
+import path from 'path';
+import fs from 'fs';
+import { v4 as uuidv4 } from 'uuid';
 import { Material } from './entities/material.entity';
 import { UpdateMaterialDto } from './dto/update-material.dto';
+import { PreprocessMaterialDto } from './dto/preprocess.dto';
 import { PaginationDto, PaginatedResult } from '../common/dto/pagination.dto';
 
 @Injectable()
@@ -113,5 +118,99 @@ export class MaterialService {
     const material = await this.findOne(id, userId);
     await this.materialRepository.remove(material);
     return { message: '删除成功' };
+  }
+
+  async preprocessMaterial(
+    id: number,
+    userId: number,
+    preprocessDto: PreprocessMaterialDto,
+  ): Promise<Material> {
+    const material = await this.findOne(id, userId);
+    this.logger.log(
+      '开始预处理素材，素材ID: ' +
+        id +
+        ', 配置: ' +
+        JSON.stringify(preprocessDto),
+    );
+
+    const inputPath = path.join(process.cwd(), material.url);
+    if (!fs.existsSync(inputPath)) {
+      throw new NotFoundException('原始素材文件不存在');
+    }
+
+    const ext = preprocessDto.format || 'webp';
+    const filename = `${uuidv4()}.${ext}`;
+    const outputPath = path.join(process.cwd(), 'uploads', filename);
+    const outputUrl = `/uploads/${filename}`;
+
+    let image = sharp(inputPath);
+
+    if (preprocessDto.maxWidth || preprocessDto.maxHeight) {
+      image = image.resize(preprocessDto.maxWidth, preprocessDto.maxHeight, {
+        fit: 'inside',
+        withoutEnlargement: true,
+      });
+    }
+
+    if (preprocessDto.brightness || preprocessDto.contrast) {
+      const modulate: any = {};
+      if (preprocessDto.brightness) {
+        modulate.brightness = preprocessDto.brightness / 100;
+      }
+      if (preprocessDto.contrast) {
+        modulate.saturation = preprocessDto.contrast / 100;
+      }
+      image = image.modulate(modulate);
+    }
+
+    if (preprocessDto.noiseReduction) {
+      image = image.median(3);
+    }
+
+    if (ext === 'jpeg') {
+      image = image.jpeg({ quality: preprocessDto.quality || 85 });
+    } else if (ext === 'png') {
+      image = image.png({ quality: preprocessDto.quality || 85 });
+    } else {
+      image = image.webp({ quality: preprocessDto.quality || 85 });
+    }
+
+    await image.toFile(outputPath);
+    const stats = fs.statSync(outputPath);
+
+    const newMaterial = await this.create(userId, {
+      name: `${path.parse(material.name).name}_processed.${ext}`,
+      url: outputUrl,
+      size: stats.size,
+      type: 'image',
+    });
+
+    this.logger.log('素材预处理完成，新素材ID: ' + newMaterial.id);
+    return newMaterial;
+  }
+
+  async batchPreprocess(
+    userId: number,
+    materialIds: number[],
+    preprocessDto: PreprocessMaterialDto,
+  ): Promise<{ success: Material[]; failed: number[] }> {
+    const success: Material[] = [];
+    const failed: number[] = [];
+
+    for (const id of materialIds) {
+      try {
+        const material = await this.preprocessMaterial(
+          id,
+          userId,
+          preprocessDto,
+        );
+        success.push(material);
+      } catch (error) {
+        this.logger.error('批量预处理失败，素材ID: ' + id, error.stack);
+        failed.push(id);
+      }
+    }
+
+    return { success, failed };
   }
 }

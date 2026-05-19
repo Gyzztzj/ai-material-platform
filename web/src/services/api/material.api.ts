@@ -26,6 +26,16 @@ export interface ApiResponse<T> {
   message: string;
 }
 
+export interface PreprocessConfig {
+  format?: 'jpeg' | 'png' | 'webp';
+  quality?: number;
+  maxWidth?: number;
+  maxHeight?: number;
+  noiseReduction?: boolean;
+  brightness?: number;
+  contrast?: number;
+}
+
 export const materialApi = {
   getAll: async () => {
     return axiosInstance.get<PaginatedResult<Material>>("/material");
@@ -47,5 +57,16 @@ export const materialApi = {
 
   delete: async (id: number) => {
     return axiosInstance.delete<{ message: string }>(`/material/${id}`);
+  },
+
+  preprocess: async (id: number, config: PreprocessConfig) => {
+    return axiosInstance.post<Material>(`/material/${id}/preprocess`, config);
+  },
+
+  batchPreprocess: async (materialIds: number[], config: PreprocessConfig) => {
+    return axiosInstance.post<{ success: Material[]; failed: number[] }>("/material/batch-preprocess", {
+      materialIds,
+      preprocess: config,
+    });
   },
 };
