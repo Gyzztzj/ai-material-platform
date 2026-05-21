@@ -11,6 +11,7 @@ const LibraryPage = lazy(() => import("./pages/LibraryPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const RemoveBgPage = lazy(() => import("./pages/RemoveBgPage"));
 const BatchPage = lazy(() => import("./pages/BatchPage"));
+const TemplatePage = lazy(() => import("./pages/TemplatePage"));
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
               <Route index element={<HomePage />} />
               <Route element={<ProtectedRoute />}>
                 <Route path="generate" element={<GeneratePage />} />
+                <Route path="templates" element={<TemplatePage />} />
                 <Route path="library" element={<LibraryPage />} />
                 <Route path="remove-bg" element={<RemoveBgPage />} />
                 <Route path="batch" element={<BatchPage />} />

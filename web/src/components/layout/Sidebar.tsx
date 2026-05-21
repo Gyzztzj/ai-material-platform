@@ -1,12 +1,12 @@
 import { NavLink } from "react-router-dom";
 
 // 侧边栏选中样式
-const sidebarActiveClass = "bg-blue-50 text-blue-600 font-medium";
-const sidebarDefaultClass = "block p-3 rounded-lg hover:bg-gray-100 transition-colors";
+const sidebarActiveClass = "bg-sidebar-accent text-sidebar-accent-foreground font-medium";
+const sidebarDefaultClass = "block p-3 rounded-lg hover:bg-sidebar-accent transition-colors text-sidebar-foreground";
 
 export function Sidebar() {
   return (
-    <div className="w-64 border-r p-4 space-y-2">
+    <div className="w-64 border-r border-sidebar-border bg-sidebar p-4 space-y-2">
       <NavLink 
         to="/generate" 
         className={({ isActive }) => 
@@ -14,6 +14,14 @@ export function Sidebar() {
         }
       >
         🎨 AI图片生成
+      </NavLink>
+      <NavLink 
+        to="/templates" 
+        className={({ isActive }) => 
+          `${sidebarDefaultClass} ${isActive ? sidebarActiveClass : ""}`
+        }
+      >
+        📝 模板库
       </NavLink>
       <NavLink 
         to="/remove-bg" 

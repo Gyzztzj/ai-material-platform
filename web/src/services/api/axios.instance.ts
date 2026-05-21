@@ -13,6 +13,8 @@ axiosInstance.interceptors.request.use((config) => {
   console.log(
     "请求拦截器 - URL:",
     config.url,
+    "Params:",
+    config.params,
     "Token:",
     token ? `存在 (长度: ${token.length})` : "不存在",
   );
