@@ -194,7 +194,7 @@ export default function BatchPage() {
             onClick={() => fileInputRef.current?.click()}
           >
             <p className="text-lg mb-2">点击上传多张图片</p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               支持JPG、PNG、WEBP格式，最多20张
             </p>
           </div>
@@ -243,7 +243,7 @@ export default function BatchPage() {
           {isProcessing && (
             <div className="space-y-2">
               <Progress value={(completedCount / totalCount) * 100} />
-              <p className="text-sm text-gray-500 text-center">
+              <p className="text-sm text-muted-foreground text-center">
                 处理进度: {completedCount}/{totalCount}
               </p>
             </div>
@@ -292,9 +292,9 @@ export default function BatchPage() {
             {isProcessing && (
               <div className="space-y-2">
                 <Progress value={(completedCount / totalCount) * 100} />
-                <p className="text-sm text-gray-500 text-center">
-                  生成进度: {completedCount}/{totalCount}
-                </p>
+                <p className="text-sm text-muted-foreground text-center">
+                生成进度: {completedCount}/{totalCount}
+              </p>
               </div>
             )}
 
@@ -311,7 +311,7 @@ export default function BatchPage() {
       </Tabs>
 
       <div className="border-t pt-4">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           💡 提示：批量处理完成后，所有结果会自动保存到你的素材库中
         </p>
       </div>

@@ -63,6 +63,22 @@ export default function GeneratePage() {
   const [selectedStyle, setSelectedStyle] = useState("通用");
   const [isOptimizing, setIsOptimizing] = useState(false);
 
+  // 检查是否有模板数据
+  useEffect(() => {
+    const templateStr = sessionStorage.getItem("useTemplate");
+    if (templateStr) {
+      try {
+        const template = JSON.parse(templateStr);
+        setPrompt(template.prompt);
+        // 清除数据
+        sessionStorage.removeItem("useTemplate");
+        toast("已加载模板: " + template.name, "success");
+      } catch (e) {
+        console.error("解析模板失败:", e);
+      }
+    }
+  }, []);
+
   // 获取当前选中的模型
   const selectedModel = useMemo(() => {
     return models.find((m) => m.modelId === selectedModelId);
@@ -202,7 +218,7 @@ export default function GeneratePage() {
               />
 
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Sparkles className="w-4 h-4" />
                   <span>热门提示词</span>
                 </div>
@@ -212,7 +228,7 @@ export default function GeneratePage() {
                       key={hotPrompt.name}
                       type="button"
                       onClick={() => setPrompt(hotPrompt.prompt)}
-                      className="inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-medium transition-all hover:bg-blue-50 hover:border-blue-200"
+                      className="inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-medium transition-all hover:bg-primary-50 hover:border-primary-200"
                     >
                       {hotPrompt.name}
                     </button>
@@ -221,7 +237,7 @@ export default function GeneratePage() {
               </div>
 
               <div className="mt-4">
-                <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                   <Sparkles className="w-4 h-4" />
                   <span>风格模板</span>
                 </div>

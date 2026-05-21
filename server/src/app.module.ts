@@ -12,6 +12,7 @@ import { UserModule } from './user/user.module';
 import { AiModule } from './ai/ai.module';
 import { AuthModule } from './auth/auth.module';
 import { MaterialModule } from './material/material.module';
+import { TemplateModule } from './template/template.module';
 import { CommonModule } from './common/common.module';
 import configuration from './config/configuration';
 import { winstonConfig } from './config/logger.config';
@@ -68,6 +69,7 @@ import { winstonConfig } from './config/logger.config';
     AiModule,
     AuthModule,
     MaterialModule,
+    TemplateModule,
   ],
   controllers: [AppController],
   providers: [AppService],
