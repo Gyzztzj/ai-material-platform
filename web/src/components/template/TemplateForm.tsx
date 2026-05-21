@@ -15,6 +15,10 @@ const CATEGORIES = ['电商', '广告', '设计', '头像', '风景', '其他'] 
 interface TemplateFormProps {
   formData: CreateTemplateDto
   onChange: (data: CreateTemplateDto) => void
+  onSubmit?: () => void
+  onCancel?: () => void
+  submitLoading?: boolean
+  submitLabel?: string
 }
 
 export function TemplateForm({ formData, onChange }: TemplateFormProps) {
@@ -63,7 +67,10 @@ export function TemplateForm({ formData, onChange }: TemplateFormProps) {
             onChange({ ...formData, isPublic: c === true })
           }
         />
-        <label htmlFor="template-public" className="text-sm text-muted-foreground">
+        <label
+          htmlFor="template-public"
+          className="text-sm text-muted-foreground"
+        >
           公开分享此模板
         </label>
       </div>
