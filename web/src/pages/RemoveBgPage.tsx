@@ -32,16 +32,16 @@ export default function RemoveBgPage() {
   const [pollingTaskId, setPollingTaskId] = useState("");
   const [pollingEnabled, setPollingEnabled] = useState(false);
 
-  useTaskPolling({
+  useTaskPolling<{ progress: number; result: { processed: string } }>({
     taskId: pollingTaskId,
     enabled: pollingEnabled,
     fetchTask: (id: string) => aiApi.getTask(id),
     interval: 2000,
     maxFailures: 5,
-    onUpdate: (task: { progress: number }) => {
+    onUpdate: (task) => {
       setProgress(task.progress);
     },
-    onCompleted: async (task: { result: { processed: string } }) => {
+    onCompleted: async (task) => {
       setPollingEnabled(false);
       setResultUrl(getFullImageUrl(task.result.processed));
       setIsProcessing(false);
