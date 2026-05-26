@@ -46,11 +46,19 @@ async function bootstrap() {
   // CORS配置
   app.enableCors();
 
-  // 接口限流
+  // 接口限流（排除静态文件和任务轮询接口）
   const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15分钟
-    max: 100, // 限制每个IP最多100个请求
+    max: 300, // 每个IP最多300个请求
     message: '请求过于频繁，请稍后再试',
+    skip: (req) => {
+      // 跳过静态文件请求
+      if (req.path.startsWith('/uploads/')) return true;
+      // 跳过任务轮询接口（GET /api/ai/tasks/:taskId）
+      if (req.path.match(/^\/api\/ai\/tasks\/\d+$/) && req.method === 'GET')
+        return true;
+      return false;
+    },
   });
   app.use(limiter);
 

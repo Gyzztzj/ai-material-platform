@@ -18,37 +18,32 @@ export class MaterialService {
     @InjectRepository(Material)
     private materialRepository: Repository<Material>,
   ) {}
-
+  /**
+   * 创建素材
+   * @param userId 用户ID
+   * @param createMaterialDto 素材创建参数
+   * @returns 创建的素材
+   */
   async create(userId: number, createMaterialDto: any): Promise<Material> {
-    this.logger.log(
-      '开始创建素材，用户ID: ' +
-        userId +
-        ', 数据: ' +
-        JSON.stringify(createMaterialDto),
-    );
-    try {
-      const material = this.materialRepository.create({
-        userId,
-        ...createMaterialDto,
-      });
-      this.logger.log('素材对象创建成功: ' + JSON.stringify(material));
-      const result = await this.materialRepository.save(material);
-      this.logger.log('素材保存到数据库成功: ' + JSON.stringify(result));
-      const savedResult = Array.isArray(result) ? result[0] : result;
-      this.logger.log('返回的素材对象: ' + JSON.stringify(savedResult));
-      return savedResult;
-    } catch (error) {
-      this.logger.error('素材保存失败: ' + error.message, error.stack);
-      throw error;
-    }
+    const material = this.materialRepository.create({
+      userId,
+      ...createMaterialDto,
+    });
+    const result = await this.materialRepository.save(material);
+    return Array.isArray(result) ? result[0] : result;
   }
-
+  /**
+   * 获取所有素材
+   * @param userId 用户ID
+   * @param category 素材分类
+   * @param paginationDto 分页参数
+   * @returns 分页结果
+   */
   async findAll(
     userId: number,
     category?: string,
     paginationDto?: PaginationDto,
   ): Promise<PaginatedResult<Material>> {
-    this.logger.log('查询素材列表，用户ID: ' + userId + ', 分类: ' + category);
     const { page = 1, limit = 20 } = paginationDto || {};
     const skip = (page - 1) * limit;
 
@@ -70,8 +65,6 @@ export class MaterialService {
       queryBuilder.andWhere('material.category = :category', { category });
     }
 
-    const query = queryBuilder.getSql();
-    this.logger.log('执行的SQL查询: ' + query);
     const [data, total] = await queryBuilder
       .orderBy('material.createdAt', 'DESC')
       .skip(skip)
@@ -80,22 +73,17 @@ export class MaterialService {
 
     const totalPages = Math.ceil(total / limit);
 
-    this.logger.log(
-      '查询结果 - 总数: ' + total + ', 当前页数据: ' + data.length,
-    );
-    this.logger.log('返回的数据: ' + JSON.stringify(data));
-
     return {
       data,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-      },
+      pagination: { page, limit, total, totalPages },
     };
   }
-
+  /**
+   * 获取素材详情
+   * @param id 素材ID
+   * @param userId 用户ID
+   * @returns 素材详情
+   */
   async findOne(id: number, userId: number) {
     const material = await this.materialRepository.findOneBy({ id, userId });
     if (!material) {
@@ -103,7 +91,13 @@ export class MaterialService {
     }
     return material;
   }
-
+  /**
+   * 更新素材
+   * @param id 素材ID
+   * @param userId 用户ID
+   * @param updateMaterialDto 素材更新参数
+   * @returns 更新后的素材
+   */
   async update(
     id: number,
     userId: number,
@@ -113,13 +107,24 @@ export class MaterialService {
     await this.materialRepository.update(id, updateMaterialDto);
     return this.findOne(id, userId);
   }
-
+  /**
+   * 删除素材
+   * @param id 素材ID
+   * @param userId 用户ID
+   * @returns 删除成功消息
+   */
   async remove(id: number, userId: number) {
     const material = await this.findOne(id, userId);
     await this.materialRepository.remove(material);
     return { message: '删除成功' };
   }
-
+  /**
+   * 预处理素材
+   * @param id 素材ID
+   * @param userId 用户ID
+   * @param preprocessDto 预处理配置
+   * @returns 预处理后的素材
+   */
   async preprocessMaterial(
     id: number,
     userId: number,
@@ -188,7 +193,13 @@ export class MaterialService {
     this.logger.log('素材预处理完成，新素材ID: ' + newMaterial.id);
     return newMaterial;
   }
-
+  /**
+   * 批量预处理素材
+   * @param userId 用户ID
+   * @param materialIds 素材ID列表
+   * @param preprocessDto 预处理配置
+   * @returns 成功和失败的素材ID列表
+   */
   async batchPreprocess(
     userId: number,
     materialIds: number[],
@@ -206,7 +217,10 @@ export class MaterialService {
         );
         success.push(material);
       } catch (error) {
-        this.logger.error('批量预处理失败，素材ID: ' + id, error.stack);
+        this.logger.error(
+          `批量预处理失败，素材ID: ${id}`,
+          error instanceof Error ? error.stack : undefined,
+        );
         failed.push(id);
       }
     }

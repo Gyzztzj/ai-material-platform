@@ -13,23 +13,9 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Input } from "../ui/input";
-
-interface SizeOption {
-  value: string;
-  label: string;
-  aspectRatio: string;
-}
-
-interface AIModel {
-  modelId: string;
-  name: string;
-  provider: string;
-  model: string;
-  cost: number;
-  quality: number;
-  enabled: boolean;
-  supportedSizes?: SizeOption[];
-}
+import type { AIModel } from "../../lib/shared-types";
+import { getFullImageUrl } from "../../lib/utils";
+import { useTaskPolling } from "../../hooks/useTaskPolling";
 
 interface ImageEditorProps {
   imageUrl: string;
@@ -57,6 +43,49 @@ export default function ImageEditor({
     undefined,
   );
   const [models, setModels] = useState<AIModel[]>([]);
+
+  // Polling state for useTaskPolling hook
+  const [pollingTaskId, setPollingTaskId] = useState("");
+  const [pollingEnabled, setPollingEnabled] = useState(false);
+
+  useTaskPolling({
+    taskId: pollingTaskId,
+    enabled: pollingEnabled,
+    fetchTask: (id: string) => aiApi.getTask(id),
+    interval: 2000,
+    maxFailures: 5,
+    onUpdate: undefined,
+    onCompleted: (task: { result: { processed: string | string[] } }) => {
+      setPollingEnabled(false);
+      let newImageUrl = "";
+      if (Array.isArray(task.result.processed)) {
+        newImageUrl = getFullImageUrl(task.result.processed[0]);
+      } else {
+        newImageUrl = getFullImageUrl(task.result.processed);
+      }
+
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        setImage(img);
+        drawImage(img);
+        setCurrentImageUrl(newImageUrl);
+        setIsAiProcessing(false);
+        toast("AI编辑成功！请预览后点击保存", "success");
+      };
+      img.src = newImageUrl;
+    },
+    onFailed: (error: string) => {
+      setPollingEnabled(false);
+      setIsAiProcessing(false);
+      toast(error, "error");
+    },
+    onError: () => {
+      setPollingEnabled(false);
+      setIsAiProcessing(false);
+      toast("请求过于频繁，请稍后重试", "error");
+    },
+  });
 
   // 保存编辑后的图片
   const handleSave = useCallback(() => {
@@ -191,54 +220,8 @@ export default function ImageEditor({
 
       toast("AI编辑任务已创建，请稍候...", "info");
 
-      let failCount = 0;
-      const MAX_FAILS = 5;
-
-      // 轮询任务进度
-      const interval = setInterval(async () => {
-        try {
-          const { data: task } = await aiApi.getTask(taskId);
-          failCount = 0;
-
-          if (task.status === "completed") {
-            clearInterval(interval);
-            let newImageUrl = "";
-            const baseUrl =
-              import.meta.env.VITE_API_URL || "http://localhost:3000";
-            if (Array.isArray(task.result.processed)) {
-              newImageUrl = `${baseUrl}${task.result.processed[0]}`;
-            } else {
-              newImageUrl = `${baseUrl}${task.result.processed}`;
-            }
-
-            // 加载新图片到 canvas 预览
-            const img = new Image();
-            img.crossOrigin = "anonymous";
-            img.onload = () => {
-              setImage(img);
-              drawImage(img);
-              // 更新当前 imageUrl 为新的图片地址，方便后续保存
-              setCurrentImageUrl(newImageUrl);
-              setIsAiProcessing(false);
-              toast("AI编辑成功！请预览后点击保存", "success");
-            };
-            img.src = newImageUrl;
-          } else if (task.status === "failed") {
-            clearInterval(interval);
-            setIsAiProcessing(false);
-            toast(task.error || "编辑失败", "error");
-          }
-        } catch (err) {
-          console.error("轮询任务失败:", err);
-          failCount++;
-
-          if (failCount >= MAX_FAILS) {
-            clearInterval(interval);
-            setIsAiProcessing(false);
-            toast("请求过于频繁，请稍后重试", "error");
-          }
-        }
-      }, 2000);
+      setPollingTaskId(taskId);
+      setPollingEnabled(true);
     } catch (error) {
       console.error("创建编辑任务失败:", error);
       setIsAiProcessing(false);

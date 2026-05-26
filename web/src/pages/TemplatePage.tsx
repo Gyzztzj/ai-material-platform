@@ -83,11 +83,9 @@ export default function TemplatePage() {
       isPublic: showPublicOnly,
       search: debouncedSearch || undefined,
     }
-    console.log('loadTemplates 调用，参数:', params)
     setLoading(true)
     try {
       const { data } = await templateApi.getAll(params)
-      console.log('返回数据:', data)
       setTemplates(data.data || [])
     } catch {
       toast('加载模板失败', 'error')

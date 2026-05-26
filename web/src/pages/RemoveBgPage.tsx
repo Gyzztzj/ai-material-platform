@@ -14,6 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../components/ui/dialog";
+import { getFullImageUrl, downloadFile, extractErrorMsg } from "../lib/utils";
+import { useTaskPolling } from "../hooks/useTaskPolling";
 
 export default function RemoveBgPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -25,6 +27,39 @@ export default function RemoveBgPage() {
   const [showEditor, setShowEditor] = useState(false);
   const [editImageUrl, setEditImageUrl] = useState<string | null>(null);
   const setUser = useUserStore((state) => state.setUser);
+
+  // Polling state for useTaskPolling hook
+  const [pollingTaskId, setPollingTaskId] = useState("");
+  const [pollingEnabled, setPollingEnabled] = useState(false);
+
+  useTaskPolling<{ progress: number; result: { processed: string } }>({
+    taskId: pollingTaskId,
+    enabled: pollingEnabled,
+    fetchTask: (id: string) => aiApi.getTask(id),
+    interval: 2000,
+    maxFailures: 5,
+    onUpdate: (task) => {
+      setProgress(task.progress);
+    },
+    onCompleted: async (task) => {
+      setPollingEnabled(false);
+      setResultUrl(getFullImageUrl(task.result.processed));
+      setIsProcessing(false);
+      toast("抠图成功！", "success");
+      const { data: userData } = await userApi.getProfile();
+      setUser(userData);
+    },
+    onFailed: (error: string) => {
+      setPollingEnabled(false);
+      setIsProcessing(false);
+      toast(error, "error");
+    },
+    onError: () => {
+      setPollingEnabled(false);
+      setIsProcessing(false);
+      toast("请求过于频繁，请稍后重试", "error");
+    },
+  });
 
   const handleRemoveBg = useCallback(async () => {
     if (!selectedFile) return;
@@ -40,50 +75,10 @@ export default function RemoveBgPage() {
 
       const imageUrl = uploadResult.url;
       const { data: taskResult } = await aiApi.removeBackground(imageUrl);
-      const taskId = taskResult.taskId;
-
-      let failCount = 0;
-      const MAX_FAILS = 5;
-
-      const interval = setInterval(async () => {
-        try {
-          const { data: task } = await aiApi.getTask(taskId);
-          failCount = 0;
-
-          setProgress(task.progress);
-
-          if (task.status === "completed") {
-            clearInterval(interval);
-            const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-            setResultUrl(
-              `${baseUrl}${task.result.processed}`,
-            );
-            setIsProcessing(false);
-            toast("抠图成功！", "success");
-            const { data: userData } = await userApi.getProfile();
-            setUser(userData);
-          } else if (task.status === "failed") {
-            clearInterval(interval);
-            setIsProcessing(false);
-            toast(task.error || "抠图失败", "error");
-          }
-        } catch (err) {
-          console.error("轮询任务失败:", err);
-          failCount++;
-
-          if (failCount >= MAX_FAILS) {
-            clearInterval(interval);
-            setIsProcessing(false);
-            toast("请求过于频繁，请稍后重试", "error");
-          }
-        }
-      }, 2000);
+      setPollingTaskId(taskResult.taskId);
+      setPollingEnabled(true);
     } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? (error as unknown as { response?: { data?: { message?: string } } })
-              .response?.data?.message || error.message
-          : "抠图失败，请重试";
+      const errorMessage = extractErrorMsg(error, "抠图失败，请重试");
       console.error("抠图出错:", error);
       setIsProcessing(false);
       toast(errorMessage, "error");
@@ -125,22 +120,7 @@ export default function RemoveBgPage() {
 
   const downloadResult = async () => {
     if (!resultUrl) return;
-    try {
-      const response = await fetch(resultUrl);
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = `bg-removed-${Date.now()}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      window.URL.revokeObjectURL(blobUrl);
-    } catch (error) {
-      console.error("下载失败:", error);
-    }
+    await downloadFile(resultUrl, `bg-removed-${Date.now()}.png`);
   };
 
   return (

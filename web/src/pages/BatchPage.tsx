@@ -19,6 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
+import { extractErrorMsg } from "../lib/utils";
+import { useBatchTaskPolling } from "../hooks/useTaskPolling";
 
 export default function BatchPage() {
   const [activeTab, setActiveTab] = useState("remove-bg");
@@ -29,6 +31,34 @@ export default function BatchPage() {
   const [completedCount, setCompletedCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Batch polling state for useBatchTaskPolling hook
+  const [batchTaskIds, setBatchTaskIds] = useState<string[]>([]);
+  const [batchPollingEnabled, setBatchPollingEnabled] = useState(false);
+  const batchTypeRef = useRef<"remove-bg" | "generate">("remove-bg");
+
+  useBatchTaskPolling({
+    taskIds: batchTaskIds,
+    enabled: batchPollingEnabled,
+    fetchTask: (id: string) => aiApi.getTask(id),
+    interval: 2000,
+    maxFailures: 5,
+    onUpdate: setCompletedCount,
+    onAllDone: (completed: number) => {
+      setBatchPollingEnabled(false);
+      setIsProcessing(false);
+      const msg =
+        batchTypeRef.current === "remove-bg"
+          ? `批量处理完成！成功${completed}张`
+          : `批量生成完成！成功${completed}张`;
+      toast(msg, "success");
+    },
+    onError: (error: string) => {
+      setBatchPollingEnabled(false);
+      setIsProcessing(false);
+      toast(error, "error");
+    },
+  });
 
   const handleBatchRemoveBg = async () => {
     if (files.length === 0) return;
@@ -47,51 +77,11 @@ export default function BatchPage() {
       toast(`成功上传${files.length}张图片，开始批量抠图...`, "info");
 
       const { data } = await aiApi.batchRemoveBg(uploadedFiles);
-      const taskIds = data.taskIds;
-
-      let failCount = 0;
-      const MAX_FAILS = 5;
-
-      const interval = setInterval(async () => {
-        try {
-          let completed = 0;
-          let allDone = true;
-
-          // 串行轮询，避免并发请求过多
-          for (const taskId of taskIds) {
-            const { data: task } = await aiApi.getTask(taskId);
-            if (task.status === "completed" || task.status === "failed") {
-              completed++;
-            } else {
-              allDone = false;
-            }
-          }
-
-          failCount = 0;
-          setCompletedCount(completed);
-
-          if (allDone) {
-            clearInterval(interval);
-            setIsProcessing(false);
-            toast(`批量处理完成！成功${completed}张`, "success");
-          }
-        } catch (err) {
-          console.error("轮询任务失败:", err);
-          failCount++;
-
-          if (failCount >= MAX_FAILS) {
-            clearInterval(interval);
-            setIsProcessing(false);
-            toast("请求过于频繁，请稍后重试", "error");
-          }
-        }
-      }, 2000); // 增加轮询间隔到 2 秒
+      batchTypeRef.current = "remove-bg";
+      setBatchTaskIds(data.taskIds);
+      setBatchPollingEnabled(true);
     } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? (error as unknown as { response?: { data?: { message?: string } } })
-              .response?.data?.message || error.message
-          : "批量抠图失败，请重试";
+      const errorMessage = extractErrorMsg(error, "批量抠图失败，请重试");
       console.error("批量抠图出错:", error);
       setIsProcessing(false);
       toast(errorMessage, "error");
@@ -114,51 +104,11 @@ export default function BatchPage() {
       toast(`创建${tasks.length}个生成任务...`, "info");
 
       const { data } = await aiApi.batchGenerate(tasks);
-      const taskIds = data.taskIds;
-
-      let failCount = 0;
-      const MAX_FAILS = 5;
-
-      const interval = setInterval(async () => {
-        try {
-          let completed = 0;
-          let allDone = true;
-
-          // 串行轮询，避免并发请求过多
-          for (const taskId of taskIds) {
-            const { data: task } = await aiApi.getTask(taskId);
-            if (task.status === "completed" || task.status === "failed") {
-              completed++;
-            } else {
-              allDone = false;
-            }
-          }
-
-          failCount = 0;
-          setCompletedCount(completed);
-
-          if (allDone) {
-            clearInterval(interval);
-            setIsProcessing(false);
-            toast(`批量生成完成！成功${completed}张`, "success");
-          }
-        } catch (err) {
-          console.error("轮询任务失败:", err);
-          failCount++;
-
-          if (failCount >= MAX_FAILS) {
-            clearInterval(interval);
-            setIsProcessing(false);
-            toast("请求过于频繁，请稍后重试", "error");
-          }
-        }
-      }, 2000); // 增加轮询间隔到 2 秒
+      batchTypeRef.current = "generate";
+      setBatchTaskIds(data.taskIds);
+      setBatchPollingEnabled(true);
     } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? (error as unknown as { response?: { data?: { message?: string } } })
-              .response?.data?.message || error.message
-          : "批量生成失败，请重试";
+      const errorMessage = extractErrorMsg(error, "批量生成失败，请重试");
       console.error("批量生成出错:", error);
       setIsProcessing(false);
       toast(errorMessage, "error");

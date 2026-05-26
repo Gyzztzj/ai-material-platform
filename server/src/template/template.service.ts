@@ -13,7 +13,12 @@ export class TemplateService {
     @InjectRepository(Template)
     private templateRepository: Repository<Template>,
   ) {}
-
+  /**
+   * 创建模板
+   * @param userId 用户ID
+   * @param createTemplateDto 模板创建参数
+   * @returns 创建的模板
+   */
   async create(
     userId: number,
     createTemplateDto: CreateTemplateDto,
@@ -31,6 +36,13 @@ export class TemplateService {
     return await this.templateRepository.save(template);
   }
 
+  /**
+   * 获取所有模板
+   * @param userId 用户ID
+   * @param options 查询选项
+   * @param paginationDto 分页参数
+   * @returns 分页结果
+   */
   async findAll(
     userId: number,
     options?: {
@@ -40,9 +52,6 @@ export class TemplateService {
     },
     paginationDto?: PaginationDto,
   ): Promise<PaginatedResult<Template>> {
-    this.logger.log(
-      'findAll 调用，用户ID:' + userId + '，参数:' + JSON.stringify(options),
-    );
     const { page = 1, limit = 20 } = paginationDto || {};
     const skip = (page - 1) * limit;
 
@@ -50,24 +59,18 @@ export class TemplateService {
 
     // 构建基础访问控制条件
     if (options?.isPublic === true) {
-      // 只看公开模板
       queryBuilder.where('template.isPublic = true');
     } else if (options?.isPublic === false) {
-      // 只看自己的模板
       queryBuilder.where('template.userId = :userId', { userId });
     } else {
-      // 默认：自己的模板 + 公开模板
       queryBuilder.where(
         'template.userId = :userId OR template.isPublic = true',
-        {
-          userId,
-        },
+        { userId },
       );
     }
 
     // 应用分类筛选
     if (options?.category) {
-      this.logger.log('应用分类筛选:' + options.category);
       queryBuilder.andWhere('template.category = :category', {
         category: options.category,
       });
@@ -75,19 +78,11 @@ export class TemplateService {
 
     // 应用搜索筛选
     if (options?.search) {
-      this.logger.log('应用搜索筛选:' + options.search);
       queryBuilder.andWhere(
         '(template.name ILIKE :search OR template.prompt ILIKE :search)',
-        {
-          search: `%${options.search}%`,
-        },
+        { search: `%${options.search}%` },
       );
-    } else {
-      this.logger.log('没有应用搜索筛选');
     }
-
-    const sql = queryBuilder.getSql();
-    this.logger.log('生成的SQL: ' + sql);
 
     const [data, total] = await queryBuilder
       .orderBy('template.createdAt', 'DESC')
@@ -108,6 +103,12 @@ export class TemplateService {
     };
   }
 
+  /**
+   * 获取模板详情
+   * @param id 模板ID
+   * @param userId 用户ID
+   * @returns 模板详情
+   */
   async findOne(id: number, userId: number) {
     const template = await this.templateRepository.findOne({
       where: [
@@ -120,7 +121,13 @@ export class TemplateService {
     }
     return template;
   }
-
+  /**
+   * 更新模板
+   * @param id 模板ID
+   * @param userId 用户ID
+   * @param updateTemplateDto 模板更新参数
+   * @returns 更新后的模板
+   */
   async update(
     id: number,
     userId: number,
@@ -133,7 +140,12 @@ export class TemplateService {
     await this.templateRepository.update(id, updateTemplateDto);
     return this.findOne(id, userId);
   }
-
+  /**
+   * 删除模板
+   * @param id 模板ID
+   * @param userId 用户ID
+   * @returns 删除成功消息
+   */
   async remove(id: number, userId: number) {
     const template = await this.findOne(id, userId);
     if (template.userId !== userId) {
@@ -142,7 +154,12 @@ export class TemplateService {
     await this.templateRepository.remove(template);
     return { message: '删除成功' };
   }
-
+  /**
+   * 复制模板
+   * @param id 模板ID
+   * @param userId 用户ID
+   * @returns 复制后的模板
+   */
   async copyTemplate(id: number, userId: number): Promise<Template> {
     const template = await this.findOne(id, userId);
     const newTemplate = this.templateRepository.create({

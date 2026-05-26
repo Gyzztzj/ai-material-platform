@@ -1,4 +1,5 @@
 import axiosInstance from "./axios.instance";
+import type { PaginatedResult } from "../../lib/shared-types";
 
 export interface Material {
   id: number;
@@ -8,22 +9,6 @@ export interface Material {
   type: string;
   category: string | null;
   createdAt: string;
-}
-
-export interface PaginatedResult<T> {
-  data: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-export interface ApiResponse<T> {
-  code: number;
-  data: T;
-  message: string;
 }
 
 export interface PreprocessConfig {

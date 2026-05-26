@@ -60,7 +60,7 @@ import { winstonConfig } from './config/logger.config';
             ? { rejectUnauthorized: false }
             : false,
         autoLoadEntities: true,
-        synchronize: true, // 开发环境用，生产环境关闭
+        synchronize: false,
       }),
       inject: [ConfigService],
     }),

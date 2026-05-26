@@ -38,16 +38,8 @@ import {
   Square,
 } from 'lucide-react'
 import ImageEditor from '../components/editor/ImageEditor'
-
-interface Material {
-  id: number
-  name: string
-  url: string
-  size: number
-  type: string
-  category: string | null
-  createdAt: string
-}
+import type { Material } from '../services/api/material.api'
+import { getFullImageUrl, downloadFile } from '../lib/utils'
 
 export default function LibraryPage() {
   const [materials, setMaterials] = useState<Material[]>([])
@@ -80,10 +72,7 @@ export default function LibraryPage() {
   const loadMaterials = async () => {
     try {
       const { data } = await materialApi.getAll()
-      console.log('API完整返回:', data)
-      console.log('data.data:', data.data)
       const materialsData = data.data || []
-      console.log('解析后的素材列表:', materialsData)
       setMaterials(materialsData)
     } catch (error) {
       console.error('加载素材失败:', error)
@@ -92,29 +81,13 @@ export default function LibraryPage() {
     }
   }
 
-  console.log('当前 materials 状态:', materials)
-  console.log('当前 filterType:', filterType)
-  console.log('当前 searchTerm:', searchTerm)
-
   const filteredMaterials = materials.filter((material) => {
     const matchesSearch = material.name
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
     const matchesType = filterType === 'all' || material.type === filterType
-    console.log(
-      '素材过滤 - name:',
-      material.name,
-      'type:',
-      material.type,
-      'matchesSearch:',
-      matchesSearch,
-      'matchesType:',
-      matchesType,
-    )
     return matchesSearch && matchesType
   })
-
-  console.log('过滤后的素材:', filteredMaterials)
 
   useEffect(() => {
     loadMaterials()
@@ -152,22 +125,7 @@ export default function LibraryPage() {
   }
 
   const downloadMaterial = async (url: string, name: string) => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}${url}`)
-      const blob = await response.blob()
-      const blobUrl = window.URL.createObjectURL(blob)
-
-      const link = document.createElement('a')
-      link.href = blobUrl
-      link.download = name
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-
-      window.URL.revokeObjectURL(blobUrl)
-    } catch (error) {
-      console.error('下载失败:', error)
-    }
+    await downloadFile(getFullImageUrl(url), name);
   }
 
   const handleImageLoad = (id: number) => {
@@ -373,7 +331,7 @@ export default function LibraryPage() {
                   <div className="w-full h-full bg-gradient-to-br from-muted to-muted-foreground/20 animate-pulse" />
                 </div>
                 <img
-                  src={`${import.meta.env.VITE_API_URL}${material.url}`}
+                  src={getFullImageUrl(material.url)}
                   alt={material.name}
                   loading="lazy"
                   className={`w-full h-full object-cover transition-opacity duration-300 ${
@@ -461,7 +419,7 @@ export default function LibraryPage() {
                     <div className="w-full h-full bg-gradient-to-br from-muted to-muted-foreground/20 animate-pulse" />
                   </div>
                   <img
-                    src={`${import.meta.env.VITE_API_URL}${material.url}`}
+                    src={getFullImageUrl(material.url)}
                     alt={material.name}
                     loading="lazy"
                     className={`w-full h-full object-cover transition-opacity duration-300 ${
@@ -567,7 +525,7 @@ export default function LibraryPage() {
               <DialogTitle>图片编辑</DialogTitle>
             </DialogHeader>
             <ImageEditor
-              imageUrl={`${import.meta.env.VITE_API_URL}${selectedMaterial.url}`}
+              imageUrl={getFullImageUrl(selectedMaterial.url)}
               onSave={() => {
                 // 刷新素材列表，显示新编辑的图片
                 loadMaterials()
