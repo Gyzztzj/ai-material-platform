@@ -55,7 +55,9 @@ axiosInstance.interceptors.response.use(
   },
   async (error: AxiosError & { config: RetryConfig & { __retryCount?: number } }) => {
     const config = error.config;
-    const message = (error.response?.data as any)?.message || "请求失败";
+    const message =
+      (error.response?.data as Record<string, unknown> | undefined)?.message as string | undefined
+      || "请求失败";
     const url = config?.url || "";
     const status = error.response?.status;
 

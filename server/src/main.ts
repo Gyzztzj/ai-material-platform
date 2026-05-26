@@ -55,7 +55,8 @@ async function bootstrap() {
       // 跳过静态文件请求
       if (req.path.startsWith('/uploads/')) return true;
       // 跳过任务轮询接口（GET /api/ai/tasks/:taskId）
-      if (req.path.match(/^\/api\/ai\/tasks\/\d+$/) && req.method === 'GET') return true;
+      if (req.path.match(/^\/api\/ai\/tasks\/\d+$/) && req.method === 'GET')
+        return true;
       return false;
     },
   });

@@ -38,10 +38,10 @@ export default function RemoveBgPage() {
     fetchTask: (id: string) => aiApi.getTask(id),
     interval: 2000,
     maxFailures: 5,
-    onUpdate: (task: any) => {
+    onUpdate: (task: { progress: number }) => {
       setProgress(task.progress);
     },
-    onCompleted: async (task: any) => {
+    onCompleted: async (task: { result: { processed: string } }) => {
       setPollingEnabled(false);
       setResultUrl(getFullImageUrl(task.result.processed));
       setIsProcessing(false);

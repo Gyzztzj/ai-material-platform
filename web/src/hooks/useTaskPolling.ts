@@ -40,7 +40,6 @@ export function useTaskPolling<T = unknown>({
   onCompleted,
   onFailed,
   fetchTask,
-  interval: _interval, // 保留但忽略，指数退避下不再使用固定间隔
   enabled = true,
   maxFailures = 5,
   onError,
@@ -148,7 +147,6 @@ export interface BatchTaskPollingOptions<T = unknown> {
 export function useBatchTaskPolling<T = unknown>({
   taskIds,
   fetchTask,
-  interval: _interval,
   enabled = true,
   maxFailures = 5,
   onUpdate,

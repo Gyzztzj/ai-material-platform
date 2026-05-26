@@ -1,5 +1,5 @@
 import axiosInstance from "./axios.instance";
-import type { PaginatedResult, ApiResponse } from "../../lib/shared-types";
+import type { PaginatedResult } from "../../lib/shared-types";
 
 export interface Material {
   id: number;

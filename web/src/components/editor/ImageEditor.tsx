@@ -55,7 +55,7 @@ export default function ImageEditor({
     interval: 2000,
     maxFailures: 5,
     onUpdate: undefined,
-    onCompleted: (task: any) => {
+    onCompleted: (task: { result: { processed: string | string[] } }) => {
       setPollingEnabled(false);
       let newImageUrl = "";
       if (Array.isArray(task.result.processed)) {
