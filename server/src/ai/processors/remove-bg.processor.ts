@@ -1,6 +1,6 @@
 import { Processor, Process } from '@nestjs/bull';
 import type { Job } from 'bull';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -13,12 +13,13 @@ import { MaterialService } from 'src/material/material.service';
 interface RemoveBgJobData {
   taskId: number;
   userId: number;
-  removeBgDto: any;
+  params: any;
 }
 
 @Processor('ai-queue')
 @Injectable()
 export class RemoveBgProcessor {
+  private readonly logger = new Logger(RemoveBgProcessor.name);
   private readonly uploadDir = FileUtils.getUploadDir();
 
   constructor(
@@ -33,7 +34,7 @@ export class RemoveBgProcessor {
 
   @Process('remove-bg')
   async handleRemoveBg(job: Job<RemoveBgJobData>) {
-    const { taskId, userId, removeBgDto } = job.data;
+    const { taskId, userId, params: removeBgDto } = job.data;
 
     try {
       await this.aiTaskRepository.update(taskId, {
@@ -96,7 +97,7 @@ export class RemoveBgProcessor {
           size: 0,
         });
       } catch (err) {
-        console.error('添加抠图结果到素材库失败:', err);
+        this.logger.error('添加抠图结果到素材库失败:', err);
       }
 
       await this.aiTaskRepository.update(taskId, {
@@ -108,7 +109,7 @@ export class RemoveBgProcessor {
         } as any,
       });
     } catch (error) {
-      console.error('抠图失败:', error);
+      this.logger.error('抠图失败:', error);
       await this.aiTaskRepository.update(taskId, {
         status: 'failed',
         error: error.message || '抠图失败',

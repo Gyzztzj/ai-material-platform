@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { type AxiosError } from "axios";
 import { toast } from "../../components/ui/Toast";
 
 const axiosInstance = axios.create({
@@ -7,6 +7,14 @@ const axiosInstance = axios.create({
 
 const authEndpoints = ["/user/login", "/user/register"];
 let authFailedCount = 0;
+
+// 429 重试配置
+const MAX_RETRY_COUNT = 3;
+const RETRY_BASE_DELAY_MS = 1000;
+
+interface RetryConfig {
+  __retryCount?: number;
+}
 
 axiosInstance.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
@@ -45,12 +53,28 @@ axiosInstance.interceptors.response.use(
     authFailedCount = 0; // 成功时重置失败计数
     return response;
   },
-  (error) => {
-    const message = error.response?.data?.message || "请求失败";
-    const url = error.config?.url || "";
+  async (error: AxiosError & { config: RetryConfig & { __retryCount?: number } }) => {
+    const config = error.config;
+    const message = (error.response?.data as any)?.message || "请求失败";
+    const url = config?.url || "";
     const status = error.response?.status;
 
     console.log("响应失败 - URL:", url, "Status:", status, "Error:", message);
+
+    // 429 限流 → 指数退避重试
+    if (status === 429 && config && !config.__retryCount) {
+      config.__retryCount = 0;
+    }
+
+    if (status === 429 && config && (config.__retryCount ?? 0) < MAX_RETRY_COUNT) {
+      config.__retryCount = (config.__retryCount ?? 0) + 1;
+      const delayMs = RETRY_BASE_DELAY_MS * Math.pow(2, config.__retryCount - 1);
+      console.log(
+        `429 限流，第 ${config.__retryCount}/${MAX_RETRY_COUNT} 次重试，等待 ${delayMs}ms...`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      return axiosInstance(config);
+    }
 
     const isAuthEndpoint = authEndpoints.some((endpoint) =>
       url.includes(endpoint),
@@ -61,15 +85,6 @@ axiosInstance.interceptors.response.use(
       console.error("认证失败，失败次数:", authFailedCount);
       console.error("  - 暂时禁用自动跳转，用于调试");
       toast("认证失败，请检查登录状态", "error");
-
-      // 连续失败多次才清除状态跳转，避免临时问题导致强制退出
-      // if (authFailedCount >= 2) {
-      //   console.error("多次认证失败，清除登录状态");
-      //   localStorage.removeItem("token");
-      //   localStorage.removeItem("user");
-      //   window.location.href = "/login";
-      //   toast("请先登录", "error");
-      // }
     } else if (!isAuthEndpoint) {
       toast(message, "error");
     }

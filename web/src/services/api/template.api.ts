@@ -1,4 +1,5 @@
 import axiosInstance from './axios.instance'
+import type { PaginatedResult } from '../../lib/shared-types'
 
 export interface Template {
   id: number
@@ -26,16 +27,6 @@ export interface UpdateTemplateDto {
   category?: string
   params?: Record<string, unknown>
   isPublic?: boolean
-}
-
-export interface PaginatedResult<T> {
-  data: T[]
-  pagination: {
-    page: number
-    limit: number
-    total: number
-    totalPages: number
-  }
 }
 
 export const templateApi = {

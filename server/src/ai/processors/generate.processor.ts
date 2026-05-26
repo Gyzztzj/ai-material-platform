@@ -42,7 +42,7 @@ function convertSizeFormat(
 interface GenerateJobData {
   taskId: number;
   userId: number;
-  generateImageDto: any;
+  params: any;
 }
 
 @Processor('ai-queue')
@@ -65,7 +65,7 @@ export class GenerateProcessor {
 
   @Process('generate')
   async handleGenerate(job: Job<GenerateJobData>) {
-    const { taskId, userId, generateImageDto } = job.data;
+    const { taskId, userId, params: generateImageDto } = job.data;
     this.logger.log(`开始处理任务 ${taskId}，用户 ${userId}`);
 
     try {

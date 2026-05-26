@@ -17,7 +17,7 @@ import { AIUtils } from '../../common/utils/ai.utils';
 interface ImageEditJobData {
   taskId: number;
   userId: number;
-  imageEditDto: any;
+  params: any;
 }
 
 @Processor('ai-queue')
@@ -39,7 +39,7 @@ export class ImageEditProcessor {
 
   @Process('image-edit')
   async handleImageEdit(job: Job<ImageEditJobData>) {
-    const { taskId, userId, imageEditDto } = job.data;
+    const { taskId, userId, params: imageEditDto } = job.data;
 
     try {
       await this.aiTaskRepository.update(taskId, {
@@ -220,7 +220,7 @@ export class ImageEditProcessor {
           });
           this.logger.log(`图片 ${i + 1} 已添加到素材库`);
         } catch (err) {
-          console.error('添加编辑结果到素材库失败:', err);
+          this.logger.error('添加编辑结果到素材库失败:', err);
         }
       }
 

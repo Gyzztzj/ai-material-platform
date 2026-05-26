@@ -33,8 +33,12 @@ export class TaskService {
     private removeBgService: RemoveBgService,
   ) {}
 
-  async getTask(taskId: number) {
-    return this.aiTaskRepository.findOneBy({ id: taskId });
+  async getTask(taskId: number, userId?: number) {
+    const where: any = { id: taskId };
+    if (userId) {
+      where.userId = userId;
+    }
+    return this.aiTaskRepository.findOneBy(where);
   }
 
   async getUserTasks(

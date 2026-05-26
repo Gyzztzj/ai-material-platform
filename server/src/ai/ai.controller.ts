@@ -52,7 +52,7 @@ export class AiController {
   @Get('tasks/:taskId')
   @UseGuards(JwtAuthGuard)
   getTask(@CurrentUser() user, @Param('taskId') taskId: string) {
-    return this.taskService.getTask(+taskId);
+    return this.taskService.getTask(+taskId, user.id);
   }
 
   @Post('remove-bg')

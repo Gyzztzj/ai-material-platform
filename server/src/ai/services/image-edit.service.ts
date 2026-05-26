@@ -6,60 +6,33 @@ import type { Queue } from 'bull';
 import { AiTask } from '../entities/ai-task.entity';
 import { ImageEditDto } from '../dto/image-edit.dto';
 import { UserService } from 'src/user/user.service';
+import { BaseTaskService } from './base-task.service';
 
 @Injectable()
-export class ImageEditService {
+export class ImageEditService extends BaseTaskService {
   constructor(
     @InjectRepository(AiTask)
-    private aiTaskRepository: Repository<AiTask>,
-    private userService: UserService,
+    aiTaskRepository: Repository<AiTask>,
+    userService: UserService,
     @InjectQueue('ai-queue')
-    private aiQueue: Queue,
-  ) {}
-
-  async createImageEditTask(userId: number, imageEditDto: ImageEditDto) {
-    const user = await this.userService.findOne(userId);
-    const priority = this.calculatePriority(user?.role, false);
-
-    // 扣除积分
-    await this.userService.deductCredits(userId, 1);
-
-    const task = this.aiTaskRepository.create({
-      userId,
-      type: 'image-edit',
-      params: imageEditDto,
-      status: 'pending',
-      progress: 0,
-    });
-
-    await this.aiTaskRepository.save(task);
-
-    await this.aiQueue.add(
-      'image-edit',
-      {
-        taskId: task.id,
-        userId,
-        imageEditDto,
-      },
-      {
-        priority,
-        timeout: 120000, // 2分钟超时
-      },
-    );
-
-    return { taskId: task.id };
+    aiQueue: Queue,
+  ) {
+    super(aiTaskRepository, userService, aiQueue);
   }
 
-  private calculatePriority(
-    userRole: string | undefined,
-    isBatch: boolean,
-  ): number {
-    if (isBatch) {
-      return 3;
-    }
-    if (userRole === 'demo') {
-      return 1;
-    }
-    return 5;
+  /**
+   * 创建图片编辑任务
+   * @param userId 用户ID
+   * @param imageEditDto 图片编辑任务参数
+   * @returns 任务ID
+   */
+  async createImageEditTask(userId: number, imageEditDto: ImageEditDto) {
+    return this.createTask(
+      userId,
+      'image-edit',
+      imageEditDto,
+      false,
+      'image-edit',
+    );
   }
 }

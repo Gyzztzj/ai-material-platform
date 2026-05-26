@@ -6,64 +6,38 @@ import type { Queue } from 'bull';
 import { AiTask } from '../entities/ai-task.entity';
 import { GenerateImageDto } from '../dto/generate-image.dto';
 import { UserService } from 'src/user/user.service';
+import { BaseTaskService } from './base-task.service';
 
 @Injectable()
-export class GenerateService {
+export class GenerateService extends BaseTaskService {
   constructor(
     @InjectRepository(AiTask)
-    private aiTaskRepository: Repository<AiTask>,
-    private userService: UserService,
+    aiTaskRepository: Repository<AiTask>,
+    userService: UserService,
     @InjectQueue('ai-queue')
-    private aiQueue: Queue,
-  ) {}
+    aiQueue: Queue,
+  ) {
+    super(aiTaskRepository, userService, aiQueue);
+  }
 
+  /**
+   * 创建生成任务
+   * @param userId 用户ID
+   * @param generateImageDto 生成任务参数
+   * @param isBatch 是否批量任务
+   * @returns 任务ID
+   */
   async createGenerateTask(
     userId: number,
     generateImageDto: GenerateImageDto,
     isBatch: boolean = false,
   ) {
-    const user = await this.userService.findOne(userId);
-    const priority = this.calculatePriority(user?.role, isBatch);
-
-    // 扣除积分
-    await this.userService.deductCredits(userId, 1);
-
-    const task = this.aiTaskRepository.create({
+    return this.createTask(
       userId,
-      type: 'generate',
-      params: generateImageDto,
-      status: 'pending',
-      progress: 0,
-    });
-
-    await this.aiTaskRepository.save(task);
-
-    await this.aiQueue.add(
       'generate',
-      {
-        taskId: task.id,
-        userId,
-        generateImageDto,
-      },
-      {
-        priority,
-        timeout: 120000, // 2分钟超时
-      },
+      generateImageDto,
+      isBatch,
+      'generate',
     );
-
-    return { taskId: task.id };
-  }
-
-  private calculatePriority(
-    userRole: string | undefined,
-    isBatch: boolean,
-  ): number {
-    if (isBatch) {
-      return 3;
-    }
-    if (userRole === 'demo') {
-      return 1;
-    }
-    return 5;
   }
 }

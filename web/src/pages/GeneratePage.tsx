@@ -1,204 +1,162 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { useAIGeneration } from "../hooks/useAIGeneration";
-import { Button } from "../components/ui/button";
-import { Textarea } from "../components/ui/textarea";
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useAIGeneration } from '../hooks/useAIGeneration'
+import { Button } from '../components/ui/button'
+import { Textarea } from '../components/ui/textarea'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../components/ui/select";
-import { Card, CardContent } from "../components/ui/card";
-import { Progress } from "../components/ui/progress";
-import { Skeleton } from "../components/ui/Skeleton";
-import ImageEditor from "../components/editor/ImageEditor";
+} from '../components/ui/select'
+import { Card, CardContent } from '../components/ui/card'
+import { Progress } from '../components/ui/progress'
+import { Skeleton } from '../components/ui/Skeleton'
+import ImageEditor from '../components/editor/ImageEditor'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "../components/ui/dialog";
-import { toast } from "../components/ui/Toast";
-import { aiApi } from "../services/api/ai.api";
+} from '../components/ui/dialog'
+import { toast } from '../components/ui/Toast'
+import { aiApi } from '../services/api/ai.api'
 import {
   PROMPT_TEMPLATES,
   HOT_PROMPTS,
   STYLE_OPTIONS,
-} from "../constants/prompt-templates";
-import { Download, Edit3, Wand2, Sparkles } from "lucide-react";
-
-export interface SizeOption {
-  value: string;
-  label: string;
-  aspectRatio: string;
-}
-
-export interface AIModel {
-  modelId: string;
-  name: string;
-  provider: string;
-  model: string;
-  cost: number;
-  quality: number;
-  enabled: boolean;
-  supportedSizes?: SizeOption[];
-}
+} from '../constants/prompt-templates'
+import { Download, Edit3, Wand2, Sparkles } from 'lucide-react'
+import type { AIModel, SizeOption } from '../lib/shared-types'
+import { getFullImageUrl, extractImagePath, downloadFile } from '../lib/utils'
 
 const FALLBACK_SIZES: SizeOption[] = [
-  { value: "1024*1024", label: "1024×1024（正方形）", aspectRatio: "1:1" },
-];
+  { value: '1024*1024', label: '1024×1024（正方形）', aspectRatio: '1:1' },
+]
 
 export default function GeneratePage() {
-  const [prompt, setPrompt] = useState("");
+  const [prompt, setPrompt] = useState('')
   const [selectedModelId, setSelectedModelId] =
-    useState<string>("tongyi-wanx-26");
-  const [size, setSize] = useState<string>("1024*1024");
-  const [models, setModels] = useState<AIModel[]>([]);
-  const { isGenerating, progress, result, generateImage } = useAIGeneration();
-  const [showEditor, setShowEditor] = useState(false);
-  const [editImageUrl, setEditImageUrl] = useState<string | null>(null);
-  const [editingImageIndex, setEditingImageIndex] = useState<number>(0);
-  const [resultImages, setResultImages] = useState<string[]>([]);
-  const [selectedStyle, setSelectedStyle] = useState("通用");
-  const [isOptimizing, setIsOptimizing] = useState(false);
+    useState<string>('tongyi-wanx-26')
+  const [size, setSize] = useState<string>('1024*1024')
+  const [models, setModels] = useState<AIModel[]>([])
+  const { isGenerating, progress, result, generateImage } = useAIGeneration()
+  const [showEditor, setShowEditor] = useState(false)
+  const [editImageUrl, setEditImageUrl] = useState<string | null>(null)
+  const [editingImageIndex, setEditingImageIndex] = useState<number>(0)
+  const [resultImages, setResultImages] = useState<string[]>([])
+  const [selectedStyle, setSelectedStyle] = useState('通用')
+  const [isOptimizing, setIsOptimizing] = useState(false)
 
   // 检查是否有模板数据
   useEffect(() => {
-    const templateStr = sessionStorage.getItem("useTemplate");
+    const templateStr = sessionStorage.getItem('useTemplate')
     if (templateStr) {
       try {
-        const template = JSON.parse(templateStr);
-        setPrompt(template.prompt);
+        const template = JSON.parse(templateStr)
+        setPrompt(template.prompt)
         // 清除数据
-        sessionStorage.removeItem("useTemplate");
-        toast("已加载模板: " + template.name, "success");
+        sessionStorage.removeItem('useTemplate')
+        toast('已加载模板: ' + template.name, 'success')
       } catch (e) {
-        console.error("解析模板失败:", e);
+        console.error('解析模板失败:', e)
       }
     }
-  }, []);
+  }, [])
 
   // 获取当前选中的模型
   const selectedModel = useMemo(() => {
-    return models.find((m) => m.modelId === selectedModelId);
-  }, [models, selectedModelId]);
+    return models.find((m) => m.modelId === selectedModelId)
+  }, [models, selectedModelId])
 
   // 获取当前模型支持的尺寸
   const supportedSizes = useMemo(() => {
-    return selectedModel?.supportedSizes || FALLBACK_SIZES;
-  }, [selectedModel]);
+    return selectedModel?.supportedSizes || FALLBACK_SIZES
+  }, [selectedModel])
 
   useEffect(() => {
     const loadModels = async () => {
       try {
-        const { data } = await aiApi.getModels("generate");
-        setModels(data.generate || []);
+        const { data } = await aiApi.getModels('generate')
+        setModels(data.generate || [])
       } catch (err) {
-        console.error("加载模型列表失败:", err);
+        console.error('加载模型列表失败:', err)
       }
-    };
-    loadModels();
-  }, []);
+    }
+    loadModels()
+  }, [])
 
   // 当初始加载或模型切换时，设置默认尺寸
   useEffect(() => {
     if (supportedSizes.length > 0) {
       // 如果当前选择的尺寸在新模型中不支持，则切换到默认
-      const currentSizeSupported = supportedSizes.some((s) => s.value === size);
+      const currentSizeSupported = supportedSizes.some((s) => s.value === size)
       if (!currentSizeSupported) {
-        setSize(supportedSizes[0].value);
+        setSize(supportedSizes[0].value)
       }
     }
-  }, [supportedSizes, size]);
+  }, [supportedSizes, size])
 
   // 监听 result 变化，更新 resultImages
   useEffect(() => {
     if (result?.images) {
-      setResultImages(result.images);
+      setResultImages(result.images)
     }
-  }, [result]);
+  }, [result])
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!isGenerating && prompt.trim()) {
+      generateImage(prompt, size, selectedModelId)
+    }
+  }
 
   const handleModelChange = (newModelId: string) => {
-    setSelectedModelId(newModelId);
+    setSelectedModelId(newModelId)
     // 尺寸会在上面的useEffect中自动处理
-  };
+  }
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         if (!isGenerating && prompt.trim()) {
-          e.preventDefault();
-          generateImage(prompt, size, selectedModelId);
+          e.preventDefault()
+          generateImage(prompt, size, selectedModelId)
         }
       }
     },
     [isGenerating, prompt, size, selectedModelId, generateImage],
-  );
+  )
 
   useEffect(() => {
-    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown)
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [handleKeyDown]);
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [handleKeyDown])
 
   const handleOptimizePrompt = async () => {
-    if (!prompt.trim()) return;
+    if (!prompt.trim()) return
 
-    setIsOptimizing(true);
+    setIsOptimizing(true)
     try {
-      const { data } = await aiApi.optimizePrompt(prompt, selectedStyle);
-      setPrompt(data.optimizedPrompt);
-      toast("提示词优化成功！", "success");
+      const { data } = await aiApi.optimizePrompt(prompt, selectedStyle)
+      setPrompt(data.optimizedPrompt)
+      toast('提示词优化成功！', 'success')
     } catch (error) {
-      console.error("提示词优化失败:", error);
+      console.error('提示词优化失败:', error)
     } finally {
-      setIsOptimizing(false);
+      setIsOptimizing(false)
     }
-  };
-
-  const getFullImageUrl = (imageUrl: string) => {
-    const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-    return `${baseUrl}${imageUrl}`;
-  };
-
-  // 从编辑后的 URL 中提取路径部分
-  const extractImagePath = (editedUrl: string) => {
-    const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-    if (editedUrl.startsWith(baseUrl)) {
-      return editedUrl.replace(baseUrl, "");
-    }
-    // 如果是 data URL，暂时不处理，这种情况应该不会发生
-    return editedUrl;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!prompt.trim()) return;
-    generateImage(prompt, size, selectedModelId);
-  };
+  }
 
   const downloadImage = async (imageUrl: string) => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}${imageUrl}`,
-      );
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = `ai-generated-${Date.now()}.webp`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      window.URL.revokeObjectURL(blobUrl);
-    } catch (error) {
-      console.error("下载失败:", error);
-    }
-  };
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+    await downloadFile(
+      `${baseUrl}${imageUrl}`,
+      `ai-generated-${Date.now()}.webp`,
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -357,9 +315,9 @@ export default function GeneratePage() {
                       loading="lazy"
                       className="w-full rounded-xl transition-transform duration-300 group-hover:scale-[1.02]"
                       onError={(e) => {
-                        console.error("图片加载失败:", getFullImageUrl(image));
-                        (e.target as HTMLImageElement).src =
-                          'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext fill="%239ca3af" font-family="Arial" font-size="16" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3E图片加载失败%3C/text%3E%3C/svg%3E';
+                        console.error('图片加载失败:', getFullImageUrl(image))
+                        ;(e.target as HTMLImageElement).src =
+                          'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext fill="%239ca3af" font-family="Arial" font-size="16" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3E图片加载失败%3C/text%3E%3C/svg%3E'
                       }}
                     />
                     <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -367,11 +325,9 @@ export default function GeneratePage() {
                         size="icon-sm"
                         variant="secondary"
                         onClick={() => {
-                          setEditImageUrl(
-                            `${import.meta.env.VITE_API_URL}${image}`,
-                          );
-                          setEditingImageIndex(index);
-                          setShowEditor(true);
+                          setEditImageUrl(getFullImageUrl(image))
+                          setEditingImageIndex(index)
+                          setShowEditor(true)
                         }}
                       >
                         <Edit3 className="size-4" />
@@ -405,12 +361,12 @@ export default function GeneratePage() {
               imageUrl={editImageUrl}
               onSave={(editedUrl) => {
                 // 更新显示的图片
-                const newImagePath = extractImagePath(editedUrl);
-                const newResultImages = [...resultImages];
-                newResultImages[editingImageIndex] = newImagePath;
-                setResultImages(newResultImages);
-                setShowEditor(false);
-                toast("图片编辑完成！已保存到素材库", "success");
+                const newImagePath = extractImagePath(editedUrl)
+                const newResultImages = [...resultImages]
+                newResultImages[editingImageIndex] = newImagePath
+                setResultImages(newResultImages)
+                setShowEditor(false)
+                toast('图片编辑完成！已保存到素材库', 'success')
               }}
               onCancel={() => setShowEditor(false)}
             />
@@ -418,5 +374,5 @@ export default function GeneratePage() {
         </Dialog>
       )}
     </div>
-  );
+  )
 }
