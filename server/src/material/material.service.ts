@@ -7,7 +7,7 @@ import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { Material } from './entities/material.entity';
 import { UpdateMaterialDto } from './dto/update-material.dto';
-import { PreprocessMaterialDto } from './dto/preprocess.dto';
+import { PreprocessMaterialDto, SizeSpec } from './dto/preprocess.dto';
 import { PaginationDto, PaginatedResult } from '../common/dto/pagination.dto';
 
 @Injectable()
@@ -219,6 +219,97 @@ export class MaterialService {
       } catch (error) {
         this.logger.error(
           `批量预处理失败，素材ID: ${id}`,
+          error instanceof Error ? error.stack : undefined,
+        );
+        failed.push(id);
+      }
+    }
+
+    return { success, failed };
+  }
+
+  /**
+   * 批量多尺寸导出
+   * @param userId 用户ID
+   * @param materialIds 素材ID列表
+   * @param sizes 尺寸规格列表
+   * @param format 输出格式
+   * @param quality 输出质量
+   * @returns 成功导出的结果列表
+   */
+  async batchMultiSizeExport(
+    userId: number,
+    materialIds: number[],
+    sizes: SizeSpec[],
+    format: 'jpeg' | 'png' | 'webp' = 'webp',
+    quality: number = 85,
+  ): Promise<{
+    success: Array<{
+      materialId: number;
+      name: string;
+      files: Array<{ size: string; material: Material }>;
+    }>;
+    failed: number[];
+  }> {
+    const success: Array<{
+      materialId: number;
+      name: string;
+      files: Array<{ size: string; material: Material }>;
+    }> = [];
+    const failed: number[] = [];
+
+    for (const id of materialIds) {
+      try {
+        const material = await this.findOne(id, userId);
+        const inputPath = path.join(process.cwd(), material.url);
+
+        if (!fs.existsSync(inputPath)) {
+          throw new NotFoundException('原始素材文件不存在');
+        }
+
+        const files: Array<{ size: string; material: Material }> = [];
+
+        for (const sizeSpec of sizes) {
+          const ext = format;
+          const filename = `${uuidv4()}.${ext}`;
+          const outputPath = path.join(process.cwd(), 'uploads', filename);
+          const outputUrl = `/uploads/${filename}`;
+          const sizeLabel = `${sizeSpec.width}x${sizeSpec.height}`;
+
+          let image = sharp(inputPath);
+
+          if (sizeSpec.width > 0 && sizeSpec.height > 0) {
+            image = image.resize(sizeSpec.width, sizeSpec.height, {
+              fit: 'fill',
+              withoutEnlargement: false,
+            });
+          }
+
+          if (ext === 'jpeg') {
+            image = image.jpeg({ quality });
+          } else if (ext === 'png') {
+            image = image.png({ quality });
+          } else {
+            image = image.webp({ quality });
+          }
+
+          await image.toFile(outputPath);
+          const stats = fs.statSync(outputPath);
+
+          const newMaterial = await this.create(userId, {
+            name: `${path.parse(material.name).name}_${sizeLabel}.${ext}`,
+            url: outputUrl,
+            size: stats.size,
+            type: 'image',
+          });
+
+          files.push({ size: sizeLabel, material: newMaterial });
+        }
+
+        success.push({ materialId: id, name: material.name, files });
+      } catch (error) {
+        this.logger.error(
+          `多尺寸导出失败，素材ID: ${id}`,
           error instanceof Error ? error.stack : undefined,
         );
         failed.push(id);
