@@ -5,7 +5,11 @@ import {
   Min,
   Max,
   IsBoolean,
+  IsArray,
+  ValidateNested,
+  ArrayMinSize,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class PreprocessMaterialDto {
   @IsString()
@@ -45,7 +49,37 @@ export class PreprocessMaterialDto {
   contrast?: number;
 }
 
+export class SizeSpec {
+  @IsInt()
+  @Min(1)
+  width: number;
+
+  @IsInt()
+  @Min(1)
+  height: number;
+}
+
 export class BatchPreprocessDto {
   materialIds: number[];
   preprocess: PreprocessMaterialDto;
+}
+
+export class BatchMultiSizeDto {
+  materialIds: number[];
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @ArrayMinSize(1)
+  @Type(() => SizeSpec)
+  sizes: SizeSpec[];
+
+  @IsString()
+  @IsOptional()
+  format?: 'jpeg' | 'png' | 'webp';
+
+  @IsInt()
+  @Min(10)
+  @Max(100)
+  @IsOptional()
+  quality?: number;
 }

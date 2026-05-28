@@ -54,4 +54,21 @@ export const materialApi = {
       preprocess: config,
     });
   },
+
+  batchMultiSizeExport: async (
+    materialIds: number[],
+    sizes: Array<{ width: number; height: number }>,
+    format?: 'jpeg' | 'png' | 'webp',
+    quality?: number,
+  ) => {
+    return axiosInstance.post<{
+      success: Array<{ materialId: number; name: string; files: Array<{ size: string; material: Material }> }>;
+      failed: number[];
+    }>("/material/batch-multi-size", {
+      materialIds,
+      sizes,
+      format,
+      quality,
+    });
+  },
 };

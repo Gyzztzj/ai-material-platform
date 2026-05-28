@@ -21,6 +21,7 @@ import { UpdateMaterialDto } from './dto/update-material.dto';
 import {
   PreprocessMaterialDto,
   BatchPreprocessDto,
+  BatchMultiSizeDto,
 } from './dto/preprocess.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 
@@ -108,6 +109,20 @@ export class MaterialController {
       user.id,
       batchPreprocessDto.materialIds,
       batchPreprocessDto.preprocess,
+    );
+  }
+
+  @Post('batch-multi-size')
+  batchMultiSize(
+    @CurrentUser() user,
+    @Body() batchMultiSizeDto: BatchMultiSizeDto,
+  ) {
+    return this.materialService.batchMultiSizeExport(
+      user.id,
+      batchMultiSizeDto.materialIds,
+      batchMultiSizeDto.sizes,
+      batchMultiSizeDto.format || 'webp',
+      batchMultiSizeDto.quality || 85,
     );
   }
 }
