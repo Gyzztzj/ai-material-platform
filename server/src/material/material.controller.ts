@@ -13,7 +13,6 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { v4 as uuidv4 } from 'uuid';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { MaterialService } from './material.service';
@@ -24,6 +23,8 @@ import {
   BatchMultiSizeDto,
 } from './dto/preprocess.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
+
+const uuid = require('uuid').v4;
 
 @Controller('material')
 @UseGuards(JwtAuthGuard)
@@ -37,7 +38,7 @@ export class MaterialController {
         destination: './uploads',
         filename: (req, file, cb) => {
           const ext = file.originalname.split('.').pop();
-          const filename = `${uuidv4()}.${ext}`;
+          const filename = `${uuid()}.${ext}`;
           cb(null, filename);
         },
       }),

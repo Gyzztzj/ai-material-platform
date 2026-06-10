@@ -1,17 +1,18 @@
-import { lazy, Suspense } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Layout } from "./components/layout/Layout";
-import PageLoading from "./components/ui/PageLoading";
-import { ProtectedRoute } from "./components/auth/ProtectedRoute";
-import { Toast } from "./components/ui/Toast";
+import { lazy, Suspense } from 'react'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { Layout } from './components/layout/Layout'
+import PageLoading from './components/ui/PageLoading'
+import { ProtectedRoute } from './components/auth/ProtectedRoute'
+import { Toast } from './components/ui/Toast'
 
-const HomePage = lazy(() => import("./pages/HomePage"));
-const GeneratePage = lazy(() => import("./pages/GeneratePage"));
-const LibraryPage = lazy(() => import("./pages/LibraryPage"));
-const LoginPage = lazy(() => import("./pages/LoginPage"));
-const RemoveBgPage = lazy(() => import("./pages/RemoveBgPage"));
-const BatchPage = lazy(() => import("./pages/BatchPage"));
-const TemplatePage = lazy(() => import("./pages/TemplatePage"));
+const HomePage = lazy(() => import('./pages/HomePage'))
+const GeneratePage = lazy(() => import('./pages/GeneratePage'))
+const LibraryPage = lazy(() => import('./pages/LibraryPage'))
+const LoginPage = lazy(() => import('./pages/LoginPage'))
+const RemoveBgPage = lazy(() => import('./pages/RemoveBgPage'))
+const BatchPage = lazy(() => import('./pages/BatchPage'))
+const TemplatePage = lazy(() => import('./pages/TemplatePage'))
+const ComparePage = lazy(() => import('./pages/ComparePage'))
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
                 <Route path="library" element={<LibraryPage />} />
                 <Route path="remove-bg" element={<RemoveBgPage />} />
                 <Route path="batch" element={<BatchPage />} />
+                <Route path="compare" element={<ComparePage />} />
               </Route>
             </Route>
           </Routes>
@@ -35,7 +37,7 @@ function App() {
       </Router>
       <Toast />
     </>
-  );
+  )
 }
 
-export default App;
+export default App

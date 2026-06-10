@@ -3,8 +3,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
 import { AiController } from './ai.controller';
 import { AiModelController } from './controllers/ai-model.controller';
+import { PresetController } from './controllers/preset.controller';
 import { AiTask } from './entities/ai-task.entity';
 import { AiModel } from './entities/ai-model.entity';
+import { GeneratePreset } from './entities/generate-preset.entity';
 import { UserModule } from '../user/user.module';
 import { AuthModule } from '../auth/auth.module';
 import { MaterialModule } from '../material/material.module';
@@ -14,6 +16,7 @@ import { RemoveBgService } from './services/remove-bg.service';
 import { ImageEditService } from './services/image-edit.service';
 import { TaskService } from './services/task.service';
 import { AiModelService } from './services/ai-model.service';
+import { PresetService } from './services/preset.service';
 import { TaskCleanupService } from './services/task-cleanup.service';
 import { GenerateProcessor } from './processors/generate.processor';
 import { RemoveBgProcessor } from './processors/remove-bg.processor';
@@ -22,7 +25,7 @@ import { SeedService } from '../database/seed.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([AiTask, AiModel]),
+    TypeOrmModule.forFeature([AiTask, AiModel, GeneratePreset]),
     UserModule,
     AuthModule,
     MaterialModule,
@@ -34,12 +37,12 @@ import { SeedService } from '../database/seed.service';
         removeOnFail: false,
       },
       limiter: {
-        max: 20, // 增加到每秒 20 个任务
+        max: 20,
         duration: 1000,
       },
     }),
   ],
-  controllers: [AiController, AiModelController],
+  controllers: [AiController, AiModelController, PresetController],
   providers: [
     ModelSchedulerService,
     GenerateService,
@@ -47,6 +50,7 @@ import { SeedService } from '../database/seed.service';
     ImageEditService,
     TaskService,
     AiModelService,
+    PresetService,
     TaskCleanupService,
     GenerateProcessor,
     RemoveBgProcessor,

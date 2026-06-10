@@ -1,4 +1,4 @@
-import { LoadingSpinner } from "./LoadingSpinner";
+import { LoadingSpinner } from './LoadingSpinner'
 
 export default function PageLoading() {
   return (
@@ -6,5 +6,5 @@ export default function PageLoading() {
       <LoadingSpinner size="lg" />
       <p className="mt-4 text-gray-500">加载中...</p>
     </div>
-  );
+  )
 }
