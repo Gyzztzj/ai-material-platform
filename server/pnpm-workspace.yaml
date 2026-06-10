@@ -1,7 +1,7 @@
 allowBuilds:
   '@nestjs/core': set this to true or false
-  '@scarf/scarf': set this to true or false
-  bcrypt: set this to true or false
-  msgpackr-extract: set this to true or false
-  sharp: set this to true or false
-  unrs-resolver: set this to true or false
+  '@scarf/scarf': true
+  bcrypt: true
+  msgpackr-extract: true
+  sharp: true
+  unrs-resolver: true
