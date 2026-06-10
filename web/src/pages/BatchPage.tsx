@@ -1,54 +1,52 @@
-import { useState, useRef, useEffect } from "react";
-import { aiApi } from "../services/api/ai.api";
-import { materialApi, type PreprocessConfig } from "../services/api/material.api";
-import type { Material } from "../services/api/material.api";
-import { toast } from "../components/ui/Toast";
-import { Button } from "../components/ui/button";
-import { Card, CardContent } from "../components/ui/card";
-import { Progress } from "../components/ui/progress";
+import { useState, useRef, useEffect } from 'react'
+import { aiApi } from '../services/api/ai.api'
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../components/ui/tabs";
-import { Textarea } from "../components/ui/textarea";
+  materialApi,
+  type PreprocessConfig,
+} from '../services/api/material.api'
+import type { Material } from '../services/api/material.api'
+import { toast } from '../components/ui/Toast'
+import { Button } from '../components/ui/button'
+import { Card, CardContent } from '../components/ui/card'
+import { Progress } from '../components/ui/progress'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
+import { Textarea } from '../components/ui/textarea'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../components/ui/select";
-import { Slider } from "../components/ui/slider";
-import { Input } from "../components/ui/input";
-import { extractErrorMsg, getFullImageUrl } from "../lib/utils";
-import { useBatchTaskPolling } from "../hooks/useTaskPolling";
-import { CheckSquare, Square, ImageIcon, Search } from "lucide-react";
-import { LoadingSpinner } from "../components/ui/LoadingSpinner";
+} from '../components/ui/select'
+import { Slider } from '../components/ui/slider'
+import { Input } from '../components/ui/input'
+import { extractErrorMsg, getFullImageUrl } from '../lib/utils'
+import { useBatchTaskPolling } from '../hooks/useTaskPolling'
+import { CheckSquare, Square, ImageIcon, Search } from 'lucide-react'
+import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 
 const PRESET_SIZES = [
-  { width: 1920, height: 1080, label: "1920x1080 (全高清)" },
-  { width: 1280, height: 720, label: "1280x720 (高清)" },
-  { width: 1024, height: 1024, label: "1024x1024 (正方形)" },
-  { width: 1024, height: 1792, label: "1024x1792 (竖版)" },
-  { width: 1792, height: 1024, label: "1792x1024 (横版)" },
-  { width: 800, height: 600, label: "800x600" },
-  { width: 400, height: 400, label: "400x400 (缩略图)" },
-];
+  { width: 1920, height: 1080, label: '1920x1080 (全高清)' },
+  { width: 1280, height: 720, label: '1280x720 (高清)' },
+  { width: 1024, height: 1024, label: '1024x1024 (正方形)' },
+  { width: 1024, height: 1792, label: '1024x1792 (竖版)' },
+  { width: 1792, height: 1024, label: '1792x1024 (横版)' },
+  { width: 800, height: 600, label: '800x600' },
+  { width: 400, height: 400, label: '400x400 (缩略图)' },
+]
 
 // ====== 素材选择面板（独立组件，避免每次渲染重建导致输入框失焦等问题） ======
 interface MaterialPickerProps {
-  materials: Material[];
-  materialsLoading: boolean;
-  selectedIds: Set<number>;
-  materialSearch: string;
-  loadedImages: Set<number>;
-  onSearchChange: (value: string) => void;
-  onToggleSelect: (id: number) => void;
-  onToggleSelectAll: () => void;
-  onClearSelection: () => void;
-  onImageLoad: (id: number) => void;
+  materials: Material[]
+  materialsLoading: boolean
+  selectedIds: Set<number>
+  materialSearch: string
+  loadedImages: Set<number>
+  onSearchChange: (value: string) => void
+  onToggleSelect: (id: number) => void
+  onToggleSelectAll: () => void
+  onClearSelection: () => void
+  onImageLoad: (id: number) => void
 }
 
 function MaterialPicker({
@@ -64,12 +62,12 @@ function MaterialPicker({
   onImageLoad,
 }: MaterialPickerProps) {
   const filteredMaterials = materials.filter((m) =>
-    m.name.toLowerCase().includes(materialSearch.toLowerCase())
-  );
+    m.name.toLowerCase().includes(materialSearch.toLowerCase()),
+  )
 
   const allFilteredSelected =
     filteredMaterials.length > 0 &&
-    filteredMaterials.every((m) => selectedIds.has(m.id));
+    filteredMaterials.every((m) => selectedIds.has(m.id))
 
   return (
     <div className="space-y-4">
@@ -88,7 +86,7 @@ function MaterialPicker({
               <Square className="size-4" />
             )}
             <span className="ml-1 text-sm">
-              {allFilteredSelected ? "取消全选" : "全选"}
+              {allFilteredSelected ? '取消全选' : '全选'}
             </span>
           </Button>
           {selectedIds.size > 0 && (
@@ -116,7 +114,9 @@ function MaterialPicker({
       ) : materials.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 text-center space-y-2">
           <ImageIcon className="size-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">素材库为空，请先上传素材</p>
+          <p className="text-sm text-muted-foreground">
+            素材库为空，请先上传素材
+          </p>
         </div>
       ) : filteredMaterials.length === 0 ? (
         <div className="text-center py-8">
@@ -129,15 +129,15 @@ function MaterialPicker({
               key={material.id}
               className={`overflow-hidden cursor-pointer transition-all ${
                 selectedIds.has(material.id)
-                  ? "ring-2 ring-blue-500 ring-offset-1"
-                  : "hover:shadow-md"
+                  ? 'ring-2 ring-blue-500 ring-offset-1'
+                  : 'hover:shadow-md'
               }`}
               onClick={() => onToggleSelect(material.id)}
             >
               <div className="relative aspect-square bg-muted">
                 <div
                   className={`absolute inset-0 transition-opacity duration-300 ${
-                    loadedImages.has(material.id) ? "opacity-0" : "opacity-100"
+                    loadedImages.has(material.id) ? 'opacity-0' : 'opacity-100'
                   }`}
                 >
                   <div className="w-full h-full bg-gradient-to-br from-muted to-muted-foreground/20 animate-pulse" />
@@ -147,13 +147,13 @@ function MaterialPicker({
                   alt={material.name}
                   loading="lazy"
                   className={`w-full h-full object-cover transition-opacity duration-300 ${
-                    loadedImages.has(material.id) ? "opacity-100" : "opacity-0"
+                    loadedImages.has(material.id) ? 'opacity-100' : 'opacity-0'
                   }`}
                   onLoad={() => onImageLoad(material.id)}
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect fill='%23f3f4f6' width='400' height='400'/%3E%3Ctext fill='%239ca3af' font-family='Arial' font-size='14' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3E加载失败%3C/text%3E%3C/svg%3E";
-                    onImageLoad(material.id);
+                    ;(e.target as HTMLImageElement).src =
+                      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect fill='%23f3f4f6' width='400' height='400'/%3E%3Ctext fill='%239ca3af' font-family='Arial' font-size='14' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3E加载失败%3C/text%3E%3C/svg%3E"
+                    onImageLoad(material.id)
                   }}
                 />
                 {selectedIds.has(material.id) && (
@@ -170,53 +170,57 @@ function MaterialPicker({
         </div>
       )}
     </div>
-  );
+  )
 }
 
 export default function BatchPage() {
-  const [activeTab, setActiveTab] = useState("remove-bg");
+  const [activeTab, setActiveTab] = useState('remove-bg')
 
   // ====== 批量抠图状态 ======
-  const [files, setFiles] = useState<File[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [completedCount, setCompletedCount] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [files, setFiles] = useState<File[]>([])
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [completedCount, setCompletedCount] = useState(0)
+  const [totalCount, setTotalCount] = useState(0)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // ====== 批量生成状态 ======
-  const [prompts, setPrompts] = useState("");
-  const [size, setSize] = useState("1024x1024");
+  const [prompts, setPrompts] = useState('')
+  const [size, setSize] = useState('1024x1024')
 
   // ====== 素材库选择（格式转换/压缩/多尺寸共用）======
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [materialsLoading, setMaterialsLoading] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [materialSearch, setMaterialSearch] = useState("");
-  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
+  const [materials, setMaterials] = useState<Material[]>([])
+  const [materialsLoading, setMaterialsLoading] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [materialSearch, setMaterialSearch] = useState('')
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set())
 
   // ====== 批量格式转换状态 ======
-  const [convertFormat, setConvertFormat] = useState<"jpeg" | "png" | "webp">("webp");
-  const [convertQuality, setConvertQuality] = useState(85);
-  const [converting, setConverting] = useState(false);
+  const [convertFormat, setConvertFormat] = useState<'jpeg' | 'png' | 'webp'>(
+    'webp',
+  )
+  const [convertQuality, setConvertQuality] = useState(85)
+  const [converting, setConverting] = useState(false)
 
   // ====== 批量压缩状态 ======
-  const [compressQuality, setCompressQuality] = useState(70);
-  const [compressing, setCompressing] = useState(false);
+  const [compressQuality, setCompressQuality] = useState(70)
+  const [compressing, setCompressing] = useState(false)
 
   // ====== 批量多尺寸导出状态 ======
-  const [exportSizes, setExportSizes] = useState<Array<{ width: number; height: number }>>([
+  const [exportSizes, setExportSizes] = useState<
+    Array<{ width: number; height: number }>
+  >([
     { width: 1920, height: 1080 },
     { width: 1024, height: 1024 },
     { width: 400, height: 400 },
-  ]);
-  const [customWidth, setCustomWidth] = useState("");
-  const [customHeight, setCustomHeight] = useState("");
-  const [exporting, setExporting] = useState(false);
+  ])
+  const [customWidth, setCustomWidth] = useState('')
+  const [customHeight, setCustomHeight] = useState('')
+  const [exporting, setExporting] = useState(false)
 
   // ====== 批量抠图/生成 Polling ======
-  const [batchTaskIds, setBatchTaskIds] = useState<string[]>([]);
-  const [batchPollingEnabled, setBatchPollingEnabled] = useState(false);
-  const batchTypeRef = useRef<"remove-bg" | "generate">("remove-bg");
+  const [batchTaskIds, setBatchTaskIds] = useState<string[]>([])
+  const [batchPollingEnabled, setBatchPollingEnabled] = useState(false)
+  const batchTypeRef = useRef<'remove-bg' | 'generate'>('remove-bg')
 
   useBatchTaskPolling({
     taskIds: batchTaskIds,
@@ -226,235 +230,241 @@ export default function BatchPage() {
     maxFailures: 5,
     onUpdate: setCompletedCount,
     onAllDone: (completed: number) => {
-      setBatchPollingEnabled(false);
-      setIsProcessing(false);
+      setBatchPollingEnabled(false)
+      setIsProcessing(false)
       const msg =
-        batchTypeRef.current === "remove-bg"
+        batchTypeRef.current === 'remove-bg'
           ? `批量处理完成！成功${completed}张`
-          : `批量生成完成！成功${completed}张`;
-      toast(msg, "success");
+          : `批量生成完成！成功${completed}张`
+      toast(msg, 'success')
     },
     onError: (error: string) => {
-      setBatchPollingEnabled(false);
-      setIsProcessing(false);
-      toast(error, "error");
+      setBatchPollingEnabled(false)
+      setIsProcessing(false)
+      toast(error, 'error')
     },
-  });
+  })
 
   // ====== 加载素材库 ======
   const loadMaterials = async () => {
-    setMaterialsLoading(true);
+    setMaterialsLoading(true)
     try {
-      const { data } = await materialApi.getAll();
-      setMaterials(data.data || []);
+      const { data } = await materialApi.getAll()
+      setMaterials(data.data || [])
     } catch {
-      toast("加载素材库失败", "error");
+      toast('加载素材库失败', 'error')
     } finally {
-      setMaterialsLoading(false);
+      setMaterialsLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    loadMaterials();
-  }, []);
+    loadMaterials()
+  }, [])
 
   // ====== 素材选择 ======
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   const toggleSelectAll = () => {
     setSelectedIds((prev) => {
       const filtered = materials.filter((m) =>
-        m.name.toLowerCase().includes(materialSearch.toLowerCase())
-      );
+        m.name.toLowerCase().includes(materialSearch.toLowerCase()),
+      )
       const allFilteredSelected =
-        filtered.length > 0 && filtered.every((m) => prev.has(m.id));
+        filtered.length > 0 && filtered.every((m) => prev.has(m.id))
       if (allFilteredSelected) {
-        return new Set();
+        return new Set()
       }
-      return new Set(filtered.map((m) => m.id));
-    });
-  };
+      return new Set(filtered.map((m) => m.id))
+    })
+  }
 
-  const clearSelection = () => setSelectedIds(new Set());
+  const clearSelection = () => setSelectedIds(new Set())
 
   const handleImageLoad = (id: number) => {
-    setLoadedImages((prev) => new Set(prev).add(id));
-  };
+    setLoadedImages((prev) => new Set(prev).add(id))
+  }
 
   // ====== 批量抠图 ======
   const handleBatchRemoveBg = async () => {
-    if (files.length === 0) return;
+    if (files.length === 0) return
 
-    setIsProcessing(true);
-    setCompletedCount(0);
-    setTotalCount(files.length);
+    setIsProcessing(true)
+    setCompletedCount(0)
+    setTotalCount(files.length)
 
     try {
       const uploadPromises = files.map(async (file) => {
-        const { data } = await materialApi.upload(file);
-        return { imageUrl: data.url };
-      });
+        const { data } = await materialApi.upload(file)
+        return { imageUrl: data.url }
+      })
 
-      const uploadedFiles = await Promise.all(uploadPromises);
-      toast(`成功上传${files.length}张图片，开始批量抠图...`, "info");
+      const uploadedFiles = await Promise.all(uploadPromises)
+      toast(`成功上传${files.length}张图片，开始批量抠图...`, 'info')
 
-      const { data } = await aiApi.batchRemoveBg(uploadedFiles);
-      batchTypeRef.current = "remove-bg";
-      setBatchTaskIds(data.taskIds);
-      setBatchPollingEnabled(true);
+      const { data } = await aiApi.batchRemoveBg(uploadedFiles)
+      batchTypeRef.current = 'remove-bg'
+      setBatchTaskIds(data.taskIds)
+      setBatchPollingEnabled(true)
     } catch (error) {
-      const errorMessage = extractErrorMsg(error, "批量抠图失败，请重试");
-      console.error("批量抠图出错:", error);
-      setIsProcessing(false);
-      toast(errorMessage, "error");
+      const errorMessage = extractErrorMsg(error, '批量抠图失败，请重试')
+      console.error('批量抠图出错:', error)
+      setIsProcessing(false)
+      toast(errorMessage, 'error')
     }
-  };
+  }
 
   // ====== 批量生成 ======
   const handleBatchGenerate = async () => {
-    const promptList = prompts.split("\n").filter((p) => p.trim());
-    if (promptList.length === 0) return;
+    const promptList = prompts.split('\n').filter((p) => p.trim())
+    if (promptList.length === 0) return
 
-    setIsProcessing(true);
-    setCompletedCount(0);
-    setTotalCount(promptList.length);
+    setIsProcessing(true)
+    setCompletedCount(0)
+    setTotalCount(promptList.length)
 
     try {
       const tasks = promptList.map((prompt) => ({
         prompt: prompt.trim(),
         size,
-      }));
-      toast(`创建${tasks.length}个生成任务...`, "info");
+      }))
+      toast(`创建${tasks.length}个生成任务...`, 'info')
 
-      const { data } = await aiApi.batchGenerate(tasks);
-      batchTypeRef.current = "generate";
-      setBatchTaskIds(data.taskIds);
-      setBatchPollingEnabled(true);
+      const { data } = await aiApi.batchGenerate(tasks)
+      batchTypeRef.current = 'generate'
+      setBatchTaskIds(data.taskIds)
+      setBatchPollingEnabled(true)
     } catch (error) {
-      const errorMessage = extractErrorMsg(error, "批量生成失败，请重试");
-      console.error("批量生成出错:", error);
-      setIsProcessing(false);
-      toast(errorMessage, "error");
+      const errorMessage = extractErrorMsg(error, '批量生成失败，请重试')
+      console.error('批量生成出错:', error)
+      setIsProcessing(false)
+      toast(errorMessage, 'error')
     }
-  };
+  }
 
   // ====== 批量格式转换 ======
   const handleBatchConvert = async () => {
-    if (selectedIds.size === 0) return;
-    setConverting(true);
+    if (selectedIds.size === 0) return
+    setConverting(true)
     try {
       const config: PreprocessConfig = {
         format: convertFormat,
         quality: convertQuality,
-      };
-      const { data } = await materialApi.batchPreprocess(Array.from(selectedIds), config);
+      }
+      const { data } = await materialApi.batchPreprocess(
+        Array.from(selectedIds),
+        config,
+      )
       toast(
         `格式转换完成：成功 ${data.success.length} 个，失败 ${data.failed.length} 个`,
-        "success"
-      );
-      setSelectedIds(new Set());
-      loadMaterials();
+        'success',
+      )
+      setSelectedIds(new Set())
+      loadMaterials()
     } catch (error) {
-      toast(extractErrorMsg(error, "格式转换失败"), "error");
+      toast(extractErrorMsg(error, '格式转换失败'), 'error')
     } finally {
-      setConverting(false);
+      setConverting(false)
     }
-  };
+  }
 
   // ====== 批量压缩 ======
   const handleBatchCompress = async () => {
-    if (selectedIds.size === 0) return;
-    setCompressing(true);
+    if (selectedIds.size === 0) return
+    setCompressing(true)
     try {
       const config: PreprocessConfig = {
-        format: "webp",
+        format: 'webp',
         quality: compressQuality,
-      };
-      const { data } = await materialApi.batchPreprocess(Array.from(selectedIds), config);
+      }
+      const { data } = await materialApi.batchPreprocess(
+        Array.from(selectedIds),
+        config,
+      )
       toast(
         `压缩完成：成功 ${data.success.length} 个，失败 ${data.failed.length} 个`,
-        "success"
-      );
-      setSelectedIds(new Set());
-      loadMaterials();
+        'success',
+      )
+      setSelectedIds(new Set())
+      loadMaterials()
     } catch (error) {
-      toast(extractErrorMsg(error, "压缩失败"), "error");
+      toast(extractErrorMsg(error, '压缩失败'), 'error')
     } finally {
-      setCompressing(false);
+      setCompressing(false)
     }
-  };
+  }
 
   // ====== 批量多尺寸导出 ======
   const addCustomSize = () => {
-    const w = parseInt(customWidth);
-    const h = parseInt(customHeight);
+    const w = parseInt(customWidth)
+    const h = parseInt(customHeight)
     if (!w || !h || w < 1 || h < 1) {
-      toast("请输入有效的宽高", "error");
-      return;
+      toast('请输入有效的宽高', 'error')
+      return
     }
-    const exists = exportSizes.some((s) => s.width === w && s.height === h);
+    const exists = exportSizes.some((s) => s.width === w && s.height === h)
     if (exists) {
-      toast("该尺寸已存在", "error");
-      return;
+      toast('该尺寸已存在', 'error')
+      return
     }
-    setExportSizes((prev) => [...prev, { width: w, height: h }]);
-    setCustomWidth("");
-    setCustomHeight("");
-  };
+    setExportSizes((prev) => [...prev, { width: w, height: h }])
+    setCustomWidth('')
+    setCustomHeight('')
+  }
 
   const removeExportSize = (index: number) => {
-    setExportSizes((prev) => prev.filter((_, i) => i !== index));
-  };
+    setExportSizes((prev) => prev.filter((_, i) => i !== index))
+  }
 
   const togglePresetSize = (w: number, h: number) => {
     setExportSizes((prev) => {
-      const idx = prev.findIndex((s) => s.width === w && s.height === h);
+      const idx = prev.findIndex((s) => s.width === w && s.height === h)
       if (idx !== -1) {
-        return prev.filter((_, i) => i !== idx);
+        return prev.filter((_, i) => i !== idx)
       }
-      return [...prev, { width: w, height: h }];
-    });
-  };
+      return [...prev, { width: w, height: h }]
+    })
+  }
 
   const handleBatchExport = async () => {
-    if (selectedIds.size === 0 || exportSizes.length === 0) return;
-    setExporting(true);
+    if (selectedIds.size === 0 || exportSizes.length === 0) return
+    setExporting(true)
     try {
       const { data } = await materialApi.batchMultiSizeExport(
         Array.from(selectedIds),
         exportSizes,
-        "webp",
-        85
-      );
+        'webp',
+        85,
+      )
       toast(
         `多尺寸导出完成：成功 ${data.success.length} 个素材，失败 ${data.failed.length} 个`,
-        "success"
-      );
-      setSelectedIds(new Set());
-      loadMaterials();
+        'success',
+      )
+      setSelectedIds(new Set())
+      loadMaterials()
     } catch (error) {
-      toast(extractErrorMsg(error, "多尺寸导出失败"), "error");
+      toast(extractErrorMsg(error, '多尺寸导出失败'), 'error')
     } finally {
-      setExporting(false);
+      setExporting(false)
     }
-  };
+  }
 
   // ====== 文件选择 ======
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(e.target.files || []);
-    setFiles((prev) => [...prev, ...selectedFiles].slice(0, 20));
-  };
+    const selectedFiles = Array.from(e.target.files || [])
+    setFiles((prev) => [...prev, ...selectedFiles].slice(0, 20))
+  }
 
   const removeFile = (index: number) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
-  };
+    setFiles((prev) => prev.filter((_, i) => i !== index))
+  }
 
   const materialPickerProps = {
     materials,
@@ -467,7 +477,7 @@ export default function BatchPage() {
     onToggleSelectAll: toggleSelectAll,
     onClearSelection: clearSelection,
     onImageLoad: handleImageLoad,
-  };
+  }
 
   return (
     <div className="space-y-6">
@@ -625,7 +635,7 @@ export default function BatchPage() {
                 <label className="text-sm font-medium">目标格式</label>
                 <Select
                   value={convertFormat}
-                  onValueChange={(val: "jpeg" | "png" | "webp") =>
+                  onValueChange={(val: 'jpeg' | 'png' | 'webp') =>
                     setConvertFormat(val)
                   }
                 >
@@ -716,8 +726,8 @@ export default function BatchPage() {
                   {PRESET_SIZES.map((preset) => {
                     const isSelected = exportSizes.some(
                       (s) =>
-                        s.width === preset.width && s.height === preset.height
-                    );
+                        s.width === preset.width && s.height === preset.height,
+                    )
                     return (
                       <button
                         key={preset.label}
@@ -726,13 +736,13 @@ export default function BatchPage() {
                         }
                         className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
                           isSelected
-                            ? "bg-blue-500 text-white border-blue-500"
-                            : "bg-background text-foreground border-border hover:border-blue-300"
+                            ? 'bg-blue-500 text-white border-blue-500'
+                            : 'bg-background text-foreground border-border hover:border-blue-300'
                         }`}
                       >
                         {preset.label}
                       </button>
-                    );
+                    )
                   })}
                 </div>
 
@@ -794,18 +804,25 @@ export default function BatchPage() {
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                每个素材将生成 {exportSizes.length} 种尺寸的副本，输出格式为 WebP
+                每个素材将生成 {exportSizes.length} 种尺寸的副本，输出格式为
+                WebP
               </p>
             </div>
           )}
 
           <Button
             onClick={handleBatchExport}
-            disabled={selectedIds.size === 0 || exportSizes.length === 0 || exporting}
+            disabled={
+              selectedIds.size === 0 || exportSizes.length === 0 || exporting
+            }
             loading={exporting}
             className="w-full"
           >
-            批量多尺寸导出 ({selectedIds.size > 0 ? `${selectedIds.size}个素材 × ${exportSizes.length}种尺寸` : 0})
+            批量多尺寸导出 (
+            {selectedIds.size > 0
+              ? `${selectedIds.size}个素材 × ${exportSizes.length}种尺寸`
+              : 0}
+            )
           </Button>
         </TabsContent>
       </Tabs>
@@ -816,5 +833,5 @@ export default function BatchPage() {
         </p>
       </div>
     </div>
-  );
+  )
 }

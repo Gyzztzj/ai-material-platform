@@ -4,11 +4,11 @@ import { Repository } from 'typeorm';
 import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs';
-import { v4 as uuidv4 } from 'uuid';
 import { Material } from './entities/material.entity';
 import { UpdateMaterialDto } from './dto/update-material.dto';
 import { PreprocessMaterialDto, SizeSpec } from './dto/preprocess.dto';
 import { PaginationDto, PaginatedResult } from '../common/dto/pagination.dto';
+const uuid = require('uuid').v4;
 
 @Injectable()
 export class MaterialService {
@@ -144,7 +144,7 @@ export class MaterialService {
     }
 
     const ext = preprocessDto.format || 'webp';
-    const filename = `${uuidv4()}.${ext}`;
+    const filename = `${uuid()}.${ext}`;
     const outputPath = path.join(process.cwd(), 'uploads', filename);
     const outputUrl = `/uploads/${filename}`;
 
@@ -271,7 +271,7 @@ export class MaterialService {
 
         for (const sizeSpec of sizes) {
           const ext = format;
-          const filename = `${uuidv4()}.${ext}`;
+          const filename = `${uuid()}.${ext}`;
           const outputPath = path.join(process.cwd(), 'uploads', filename);
           const outputUrl = `/uploads/${filename}`;
           const sizeLabel = `${sizeSpec.width}x${sizeSpec.height}`;

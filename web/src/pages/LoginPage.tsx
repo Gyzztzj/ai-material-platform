@@ -1,101 +1,91 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { userApi } from "../services/api/user.api";
-import { useUserStore } from "../store/user.store";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../components/ui/tabs";
-import { Sparkles } from "lucide-react";
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { userApi } from '../services/api/user.api'
+import { useUserStore } from '../store/user.store'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
+import { Sparkles } from 'lucide-react'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
-  const setUser = useUserStore((state) => state.setUser);
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const navigate = useNavigate()
+  const setUser = useUserStore((state) => state.setUser)
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
+    e.preventDefault()
+    setLoading(true)
+    setError('')
 
     try {
-      const { data } = await userApi.login(email, password);
-      console.log("登录响应数据:", data);
-      localStorage.setItem("token", data.access_token);
-      setUser(data.user);
-      navigate("/");
+      const { data } = await userApi.login(email, password)
+      console.log('登录响应数据:', data)
+      localStorage.setItem('token', data.access_token)
+      setUser(data.user)
+      navigate('/')
     } catch (err) {
       const errorMessage =
         err instanceof Error
           ? (err as unknown as { response?: { data?: { message?: string } } })
               .response?.data?.message || err.message
-          : "登录失败";
-      console.error("登录失败:", err);
-      setError(errorMessage);
+          : '登录失败'
+      console.error('登录失败:', err)
+      setError(errorMessage)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
+    e.preventDefault()
+    setLoading(true)
+    setError('')
 
     try {
-      const { data } = await userApi.register(email, password);
-      console.log("注册响应数据:", data);
-      localStorage.setItem("token", data.access_token);
-      setUser(data.user);
-      navigate("/");
+      const { data } = await userApi.register(email, password)
+      console.log('注册响应数据:', data)
+      localStorage.setItem('token', data.access_token)
+      setUser(data.user)
+      navigate('/')
     } catch (err) {
       const errorMessage =
         err instanceof Error
           ? (err as unknown as { response?: { data?: { message?: string } } })
               .response?.data?.message || err.message
-          : "注册失败";
-      setError(errorMessage);
+          : '注册失败'
+      setError(errorMessage)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleQuickDemo = async () => {
-    setLoading(true);
-    setError("");
-    setEmail("demo@demo.com");
-    setPassword("demo123456");
+    setLoading(true)
+    setError('')
+    setEmail('demo@demo.com')
+    setPassword('demo123456')
 
     try {
-      const { data } = await userApi.login("demo@demo.com", "demo123456");
-      console.log("一键体验响应数据:", data);
-      localStorage.setItem("token", data.access_token);
-      setUser(data.user);
-      navigate("/");
+      const { data } = await userApi.login('demo@demo.com', 'demo123456')
+      console.log('一键体验响应数据:', data)
+      localStorage.setItem('token', data.access_token)
+      setUser(data.user)
+      navigate('/')
     } catch (err) {
       const errorMessage =
         err instanceof Error
           ? (err as unknown as { response?: { data?: { message?: string } } })
               .response?.data?.message || err.message
-          : "登录失败";
-      setError(errorMessage);
+          : '登录失败'
+      setError(errorMessage)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="max-w-md mx-auto mt-20">
@@ -152,7 +142,7 @@ export default function LoginPage() {
                 </div>
                 {error && <p className="text-red-500 text-sm">{error}</p>}
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "登录中..." : "登录"}
+                  {loading ? '登录中...' : '登录'}
                 </Button>
               </form>
             </TabsContent>
@@ -180,7 +170,7 @@ export default function LoginPage() {
                 </div>
                 {error && <p className="text-red-500 text-sm">{error}</p>}
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "注册中..." : "注册"}
+                  {loading ? '注册中...' : '注册'}
                 </Button>
               </form>
             </TabsContent>
@@ -188,5 +178,5 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }

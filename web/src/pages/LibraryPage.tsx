@@ -125,7 +125,7 @@ export default function LibraryPage() {
   }
 
   const downloadMaterial = async (url: string, name: string) => {
-    await downloadFile(getFullImageUrl(url), name);
+    await downloadFile(getFullImageUrl(url), name)
   }
 
   const handleImageLoad = (id: number) => {

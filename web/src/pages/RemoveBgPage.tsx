@@ -1,36 +1,36 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { aiApi } from "../services/api/ai.api";
-import { materialApi } from "../services/api/material.api";
-import { userApi } from "../services/api/user.api";
-import { useUserStore } from "../store/user.store";
-import { toast } from "../components/ui/Toast";
-import { Button } from "../components/ui/button";
-import { Progress } from "../components/ui/progress";
-import { LoadingSpinner } from "../components/ui/LoadingSpinner";
-import ImageEditor from "../components/editor/ImageEditor";
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { aiApi } from '../services/api/ai.api'
+import { materialApi } from '../services/api/material.api'
+import { userApi } from '../services/api/user.api'
+import { useUserStore } from '../store/user.store'
+import { toast } from '../components/ui/Toast'
+import { Button } from '../components/ui/button'
+import { Progress } from '../components/ui/progress'
+import { LoadingSpinner } from '../components/ui/LoadingSpinner'
+import ImageEditor from '../components/editor/ImageEditor'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "../components/ui/dialog";
-import { getFullImageUrl, downloadFile, extractErrorMsg } from "../lib/utils";
-import { useTaskPolling } from "../hooks/useTaskPolling";
+} from '../components/ui/dialog'
+import { getFullImageUrl, downloadFile, extractErrorMsg } from '../lib/utils'
+import { useTaskPolling } from '../hooks/useTaskPolling'
 
 export default function RemoveBgPage() {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [resultUrl, setResultUrl] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [showEditor, setShowEditor] = useState(false);
-  const [editImageUrl, setEditImageUrl] = useState<string | null>(null);
-  const setUser = useUserStore((state) => state.setUser);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [resultUrl, setResultUrl] = useState<string | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [showEditor, setShowEditor] = useState(false)
+  const [editImageUrl, setEditImageUrl] = useState<string | null>(null)
+  const setUser = useUserStore((state) => state.setUser)
 
   // Polling state for useTaskPolling hook
-  const [pollingTaskId, setPollingTaskId] = useState("");
-  const [pollingEnabled, setPollingEnabled] = useState(false);
+  const [pollingTaskId, setPollingTaskId] = useState('')
+  const [pollingEnabled, setPollingEnabled] = useState(false)
 
   useTaskPolling<{ progress: number; result: { processed: string } }>({
     taskId: pollingTaskId,
@@ -39,89 +39,89 @@ export default function RemoveBgPage() {
     interval: 2000,
     maxFailures: 5,
     onUpdate: (task) => {
-      setProgress(task.progress);
+      setProgress(task.progress)
     },
     onCompleted: async (task) => {
-      setPollingEnabled(false);
-      setResultUrl(getFullImageUrl(task.result.processed));
-      setIsProcessing(false);
-      toast("抠图成功！", "success");
-      const { data: userData } = await userApi.getProfile();
-      setUser(userData);
+      setPollingEnabled(false)
+      setResultUrl(getFullImageUrl(task.result.processed))
+      setIsProcessing(false)
+      toast('抠图成功！', 'success')
+      const { data: userData } = await userApi.getProfile()
+      setUser(userData)
     },
     onFailed: (error: string) => {
-      setPollingEnabled(false);
-      setIsProcessing(false);
-      toast(error, "error");
+      setPollingEnabled(false)
+      setIsProcessing(false)
+      toast(error, 'error')
     },
     onError: () => {
-      setPollingEnabled(false);
-      setIsProcessing(false);
-      toast("请求过于频繁，请稍后重试", "error");
+      setPollingEnabled(false)
+      setIsProcessing(false)
+      toast('请求过于频繁，请稍后重试', 'error')
     },
-  });
+  })
 
   const handleRemoveBg = useCallback(async () => {
-    if (!selectedFile) return;
+    if (!selectedFile) return
 
-    setIsProcessing(true);
-    setProgress(0);
-    setResultUrl(null);
+    setIsProcessing(true)
+    setProgress(0)
+    setResultUrl(null)
 
     try {
-      const { data: uploadResult } = await materialApi.upload(selectedFile);
+      const { data: uploadResult } = await materialApi.upload(selectedFile)
 
-      toast("图片上传成功，开始抠图...", "info");
+      toast('图片上传成功，开始抠图...', 'info')
 
-      const imageUrl = uploadResult.url;
-      const { data: taskResult } = await aiApi.removeBackground(imageUrl);
-      setPollingTaskId(taskResult.taskId);
-      setPollingEnabled(true);
+      const imageUrl = uploadResult.url
+      const { data: taskResult } = await aiApi.removeBackground(imageUrl)
+      setPollingTaskId(taskResult.taskId)
+      setPollingEnabled(true)
     } catch (error) {
-      const errorMessage = extractErrorMsg(error, "抠图失败，请重试");
-      console.error("抠图出错:", error);
-      setIsProcessing(false);
-      toast(errorMessage, "error");
+      const errorMessage = extractErrorMsg(error, '抠图失败，请重试')
+      console.error('抠图出错:', error)
+      setIsProcessing(false)
+      toast(errorMessage, 'error')
     }
-  }, [selectedFile, setUser]);
+  }, [selectedFile, setUser])
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         if (!isProcessing && selectedFile) {
-          e.preventDefault();
-          handleRemoveBg();
+          e.preventDefault()
+          handleRemoveBg()
         }
       }
     },
     [isProcessing, selectedFile, handleRemoveBg],
-  );
+  )
 
   useEffect(() => {
-    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown)
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [handleKeyDown]);
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [handleKeyDown])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const file = e.target.files?.[0]
+    if (!file) return
 
-    setSelectedFile(file);
-    setResultUrl(null);
+    setSelectedFile(file)
+    setResultUrl(null)
 
-    const reader = new FileReader();
+    const reader = new FileReader()
     reader.onload = (e) => {
-      setPreviewUrl(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
+      setPreviewUrl(e.target?.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
 
   const downloadResult = async () => {
-    if (!resultUrl) return;
-    await downloadFile(resultUrl, `bg-removed-${Date.now()}.png`);
-  };
+    if (!resultUrl) return
+    await downloadFile(resultUrl, `bg-removed-${Date.now()}.png`)
+  }
 
   return (
     <div className="space-y-6">
@@ -199,8 +199,8 @@ export default function RemoveBgPage() {
               <div className="flex gap-2">
                 <Button
                   onClick={() => {
-                    setEditImageUrl(resultUrl);
-                    setShowEditor(true);
+                    setEditImageUrl(resultUrl)
+                    setShowEditor(true)
                   }}
                   variant="secondary"
                   className="flex-1"
@@ -217,7 +217,7 @@ export default function RemoveBgPage() {
               {isProcessing ? (
                 <LoadingSpinner size="lg" />
               ) : (
-                "抠图结果将显示在这里"
+                '抠图结果将显示在这里'
               )}
             </div>
           )}
@@ -233,9 +233,9 @@ export default function RemoveBgPage() {
             <ImageEditor
               imageUrl={editImageUrl}
               onSave={(editedUrl) => {
-                setResultUrl(editedUrl); // 直接更新显示的图片
-                setShowEditor(false);
-                toast("图片编辑完成！已保存到素材库", "success");
+                setResultUrl(editedUrl) // 直接更新显示的图片
+                setShowEditor(false)
+                toast('图片编辑完成！已保存到素材库', 'success')
               }}
               onCancel={() => setShowEditor(false)}
             />
@@ -243,5 +243,5 @@ export default function RemoveBgPage() {
         </Dialog>
       )}
     </div>
-  );
+  )
 }

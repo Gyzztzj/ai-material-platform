@@ -1,9 +1,9 @@
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
 # 安装 pnpm
-RUN npm install -g pnpm@latest
+RUN npm install -g pnpm@10.12.1
 
 RUN pnpm config set allow-scripts true
 

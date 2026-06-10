@@ -87,7 +87,10 @@ export function useTaskPolling<T = unknown>({
         }
 
         // 指数退避：每次成功获取后翻倍，不超过上限
-        currentDelayRef.current = Math.min(currentDelayRef.current * 2, DEFAULT_MAX_INTERVAL)
+        currentDelayRef.current = Math.min(
+          currentDelayRef.current * 2,
+          DEFAULT_MAX_INTERVAL,
+        )
         scheduleNext(currentDelayRef.current)
       } catch (error) {
         console.error('轮询任务失败:', error)
@@ -100,7 +103,10 @@ export function useTaskPolling<T = unknown>({
         }
 
         // 出错时也增加延迟，避免连续冲击
-        currentDelayRef.current = Math.min(currentDelayRef.current * 1.5, DEFAULT_MAX_INTERVAL)
+        currentDelayRef.current = Math.min(
+          currentDelayRef.current * 1.5,
+          DEFAULT_MAX_INTERVAL,
+        )
         scheduleNext(currentDelayRef.current)
       }
     }
@@ -224,13 +230,5 @@ export function useBatchTaskPolling<T = unknown>({
     poll()
 
     return stopPolling
-  }, [
-    taskIds,
-    enabled,
-    fetchTask,
-    onUpdate,
-    onAllDone,
-    onError,
-    maxFailures,
-  ])
+  }, [taskIds, enabled, fetchTask, onUpdate, onAllDone, onError, maxFailures])
 }
