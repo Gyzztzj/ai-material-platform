@@ -21,7 +21,7 @@
     "format:check:backend": "cd server && pnpm format:check",
     "format:check": "pnpm format:check:frontend && pnpm format:check:backend",
     "fix": "pnpm format && pnpm lint:fix",
-    "prepare": "husky install",
+    "prepare": "husky",
     "commit": "git-cz"
   },
   "keywords": [

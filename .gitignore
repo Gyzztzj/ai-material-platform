@@ -36,3 +36,7 @@ pnpm-debug.log*
 
 # Other
 localDocs/
+
+/**/uploads/**
+!/**/uploads/.gitkeep
+

@@ -73,6 +73,14 @@ export class MaterialController {
     return this.materialService.findAll(user.id, category, paginationDto);
   }
 
+  @Get('export-history')
+  getExportHistory(
+    @CurrentUser() user,
+    @Query() paginationDto?: PaginationDto,
+  ) {
+    return this.materialService.getExportHistory(user.id, paginationDto);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user) {
     return this.materialService.findOne(+id, user.id);

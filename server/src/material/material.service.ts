@@ -5,6 +5,7 @@ import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs';
 import { Material } from './entities/material.entity';
+import { ExportHistory } from './entities/export-history.entity';
 import { UpdateMaterialDto } from './dto/update-material.dto';
 import { PreprocessMaterialDto, SizeSpec } from './dto/preprocess.dto';
 import { PaginationDto, PaginatedResult } from '../common/dto/pagination.dto';
@@ -17,6 +18,8 @@ export class MaterialService {
   constructor(
     @InjectRepository(Material)
     private materialRepository: Repository<Material>,
+    @InjectRepository(ExportHistory)
+    private exportHistoryRepository: Repository<ExportHistory>,
   ) {}
   /**
    * 创建素材
@@ -316,6 +319,53 @@ export class MaterialService {
       }
     }
 
+    // 记录导出历史
+    const totalFiles = success.reduce((sum, s) => sum + s.files.length, 0);
+    try {
+      await this.exportHistoryRepository.save({
+        userId,
+        materialIds,
+        sizes,
+        format,
+        quality,
+        totalFiles,
+        status: failed.length > 0 ? 'partial' : 'completed',
+      });
+    } catch (error) {
+      this.logger.error(
+        '记录导出历史失败',
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
+
     return { success, failed };
+  }
+
+  /**
+   * 获取导出历史
+   * @param userId 用户ID
+   * @param paginationDto 分页参数
+   * @returns 分页的导出历史记录
+   */
+  async getExportHistory(
+    userId: number,
+    paginationDto?: PaginationDto,
+  ): Promise<PaginatedResult<ExportHistory>> {
+    const { page = 1, limit = 10 } = paginationDto || {};
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await this.exportHistoryRepository.findAndCount({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+      skip,
+      take: limit,
+    });
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      pagination: { page, limit, total, totalPages },
+    };
   }
 }

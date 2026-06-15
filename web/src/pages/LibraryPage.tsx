@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import {
   materialApi,
   type PreprocessConfig,
+  type ExportHistoryItem,
 } from '../services/api/material.api'
 import { toast } from '../components/ui/Toast'
 import { Button } from '../components/ui/button'
@@ -36,10 +37,24 @@ import {
   Settings2,
   CheckSquare,
   Square,
+  FileOutput,
+  History,
+  Plus,
+  X,
+  Clock,
 } from 'lucide-react'
 import ImageEditor from '../components/editor/ImageEditor'
 import type { Material } from '../services/api/material.api'
 import { getFullImageUrl, downloadFile } from '../lib/utils'
+
+const SIZE_PRESETS = [
+  { label: '缩略图 (200x200)', width: 200, height: 200 },
+  { label: '小图 (400x400)', width: 400, height: 400 },
+  { label: '中等 (800x800)', width: 800, height: 800 },
+  { label: '大图 (1200x1200)', width: 1200, height: 1200 },
+  { label: '高清 (1920x1080)', width: 1920, height: 1080 },
+  { label: '4K (3840x2160)', width: 3840, height: 2160 },
+]
 
 export default function LibraryPage() {
   const [materials, setMaterials] = useState<Material[]>([])
@@ -53,6 +68,22 @@ export default function LibraryPage() {
   const [showRenameDialog, setShowRenameDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showPreprocessDialog, setShowPreprocessDialog] = useState(false)
+  const [showExportDialog, setShowExportDialog] = useState(false)
+  const [showExportHistory, setShowExportHistory] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [exportHistory, setExportHistory] = useState<ExportHistoryItem[]>([])
+  const [exportConfig, setExportConfig] = useState({
+    format: 'webp' as 'jpeg' | 'png' | 'webp',
+    quality: 85,
+  })
+  const [exportSizes, setExportSizes] = useState<
+    Array<{ width: number; height: number }>
+  >([
+    { width: 200, height: 200 },
+    { width: 800, height: 800 },
+  ])
+  const [customWidth, setCustomWidth] = useState('')
+  const [customHeight, setCustomHeight] = useState('')
   const [newName, setNewName] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState('all')
@@ -189,6 +220,68 @@ export default function LibraryPage() {
     }
   }
 
+  const addCustomSize = () => {
+    const w = parseInt(customWidth)
+    const h = parseInt(customHeight)
+    if (w > 0 && h > 0) {
+      setExportSizes([...exportSizes, { width: w, height: h }])
+      setCustomWidth('')
+      setCustomHeight('')
+    }
+  }
+
+  const removeSize = (index: number) => {
+    setExportSizes(exportSizes.filter((_, i) => i !== index))
+  }
+
+  const togglePresetSize = (width: number, height: number) => {
+    const exists = exportSizes.some(
+      (s) => s.width === width && s.height === height,
+    )
+    if (exists) {
+      setExportSizes(
+        exportSizes.filter((s) => !(s.width === width && s.height === height)),
+      )
+    } else {
+      setExportSizes([...exportSizes, { width, height }])
+    }
+  }
+
+  const handleExport = async () => {
+    if (selectedMaterialIds.size === 0 || exportSizes.length === 0) return
+
+    setExporting(true)
+    try {
+      const { data } = await materialApi.batchMultiSizeExport(
+        Array.from(selectedMaterialIds),
+        exportSizes,
+        exportConfig.format,
+        exportConfig.quality,
+      )
+      toast(
+        `导出完成，成功 ${data.success.length} 个素材，共 ${data.success.reduce((s, m) => s + m.files.length, 0)} 个文件，失败 ${data.failed.length} 个`,
+        'success',
+      )
+      setShowExportDialog(false)
+      setSelectedMaterialIds(new Set())
+      loadMaterials()
+    } catch (error) {
+      console.error('导出失败:', error)
+      toast('导出失败，请重试', 'error')
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const loadExportHistory = async () => {
+    try {
+      const { data } = await materialApi.getExportHistory()
+      setExportHistory(data.data || [])
+    } catch (error) {
+      console.error('加载导出历史失败:', error)
+    }
+  }
+
   if (loading) {
     return (
       <div className="text-center py-20">
@@ -212,6 +305,10 @@ export default function LibraryPage() {
                   <Settings2 className="size-4 mr-1" />
                   批量预处理
                 </Button>
+                <Button size="sm" onClick={() => setShowExportDialog(true)}>
+                  <FileOutput className="size-4 mr-1" />
+                  批量导出
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -221,6 +318,17 @@ export default function LibraryPage() {
                 </Button>
               </>
             )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setShowExportHistory(true)
+                loadExportHistory()
+              }}
+            >
+              <History className="size-4 mr-1" />
+              导出历史
+            </Button>
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="icon-sm"
@@ -679,6 +787,212 @@ export default function LibraryPage() {
               disabled={selectedMaterialIds.size === 0}
             >
               开始处理 ({selectedMaterialIds.size})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 批量导出对话框 */}
+      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>素材导出优化</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">输出格式</label>
+              <Select
+                value={exportConfig.format}
+                onValueChange={(val: 'jpeg' | 'png' | 'webp') =>
+                  setExportConfig({ ...exportConfig, format: val })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="webp">WebP</SelectItem>
+                  <SelectItem value="jpeg">JPEG</SelectItem>
+                  <SelectItem value="png">PNG</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                质量: {exportConfig.quality}%
+              </label>
+              <Slider
+                value={[exportConfig.quality]}
+                min={10}
+                max={100}
+                step={5}
+                onValueChange={(val) =>
+                  setExportConfig({ ...exportConfig, quality: val[0] })
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">导出尺寸</label>
+              <div className="flex flex-wrap gap-2">
+                {SIZE_PRESETS.map((preset) => {
+                  const selected = exportSizes.some(
+                    (s) =>
+                      s.width === preset.width && s.height === preset.height,
+                  )
+                  return (
+                    <button
+                      key={preset.label}
+                      onClick={() =>
+                        togglePresetSize(preset.width, preset.height)
+                      }
+                      className={`px-2.5 py-1 rounded-md text-xs border transition-colors ${
+                        selected
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background hover:bg-muted border-border'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  )
+                })}
+              </div>
+
+              <div className="flex items-center gap-2 mt-2">
+                <Input
+                  type="number"
+                  placeholder="宽度"
+                  value={customWidth}
+                  onChange={(e) => setCustomWidth(e.target.value)}
+                  className="w-24"
+                  min="1"
+                />
+                <span className="text-muted-foreground">x</span>
+                <Input
+                  type="number"
+                  placeholder="高度"
+                  value={customHeight}
+                  onChange={(e) => setCustomHeight(e.target.value)}
+                  className="w-24"
+                  min="1"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={addCustomSize}
+                  disabled={!customWidth || !customHeight}
+                >
+                  <Plus className="size-4" />
+                </Button>
+              </div>
+
+              {exportSizes.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {exportSizes.map((size, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-xs"
+                    >
+                      {size.width}x{size.height}
+                      <button
+                        onClick={() => removeSize(index)}
+                        className="hover:text-destructive"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              将导出 {selectedMaterialIds.size} 个素材，每个素材生成{' '}
+              {exportSizes.length} 种尺寸，共{' '}
+              {selectedMaterialIds.size * exportSizes.length} 个文件
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              onClick={() => setShowExportDialog(false)}
+              disabled={exporting}
+            >
+              取消
+            </Button>
+            <Button
+              onClick={handleExport}
+              loading={exporting}
+              disabled={
+                selectedMaterialIds.size === 0 || exportSizes.length === 0
+              }
+            >
+              开始导出
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 导出历史对话框 */}
+      <Dialog open={showExportHistory} onOpenChange={setShowExportHistory}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>导出历史</DialogTitle>
+          </DialogHeader>
+          <div className="py-2 max-h-96 overflow-y-auto">
+            {exportHistory.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8 text-sm">
+                暂无导出记录
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {exportHistory.map((record) => (
+                  <div
+                    key={record.id}
+                    className="rounded-lg border p-3 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Clock className="size-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">
+                          {new Date(record.createdAt).toLocaleString('zh-CN')}
+                        </span>
+                      </div>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full ${
+                          record.status === 'completed'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-yellow-100 text-yellow-700'
+                        }`}
+                      >
+                        {record.status === 'completed' ? '完成' : '部分完成'}
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>
+                        素材数: {record.materialIds.length} | 格式:{' '}
+                        {record.format.toUpperCase()} | 质量: {record.quality}%
+                      </p>
+                      <p>
+                        尺寸:{' '}
+                        {record.sizes
+                          .map((s) => `${s.width}x${s.height}`)
+                          .join(', ')}
+                      </p>
+                      <p>生成文件: {record.totalFiles} 个</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              onClick={() => setShowExportHistory(false)}
+            >
+              关闭
             </Button>
           </DialogFooter>
         </DialogContent>

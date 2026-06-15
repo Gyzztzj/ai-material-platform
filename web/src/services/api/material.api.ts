@@ -21,6 +21,18 @@ export interface PreprocessConfig {
   contrast?: number
 }
 
+export interface ExportHistoryItem {
+  id: number
+  userId: number
+  materialIds: number[]
+  sizes: Array<{ width: number; height: number }>
+  format: string
+  quality: number
+  totalFiles: number
+  status: string
+  createdAt: string
+}
+
 export const materialApi = {
   getAll: async () => {
     return axiosInstance.get<PaginatedResult<Material>>('/material')
@@ -80,5 +92,11 @@ export const materialApi = {
       format,
       quality,
     })
+  },
+
+  getExportHistory: async () => {
+    return axiosInstance.get<PaginatedResult<ExportHistoryItem>>(
+      '/material/export-history',
+    )
   },
 }
