@@ -1,5 +1,3 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+husky
 
-# 运行 lint 检查
 pnpm lint
